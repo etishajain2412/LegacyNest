@@ -1,9 +1,24 @@
-function App() {
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Signup from "./pages/SignUp";
+import Login from "./pages/Login";
+
+function Profile() {
   return (
-    <h1 className="text-4xl font-bold text-blue-600 text-center mt-20">
-      This is our app.
-    </h1>
-  )
+    <div className="flex items-center justify-center min-h-screen bg-green-50">
+      <h1 className="text-2xl font-bold">Welcome to your Profile 🎉</h1>
+    </div>
+  );
 }
 
-export default App;
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="*" element={<Login />} /> {/* default to login */}
+      </Routes>
+    </Router>
+  );
+}
