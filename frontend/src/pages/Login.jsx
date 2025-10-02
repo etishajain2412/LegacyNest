@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
 import Cookies from "js-cookie";
 
-const Login = () => {
+const Login = ({setUser}) => {
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",
@@ -52,7 +52,7 @@ const Login = () => {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict'
       });
-      
+      setUser(user);
       navigate("/profile");
     } catch (error) {
       setErrorMessage(error.response?.data?.message || "Login failed");

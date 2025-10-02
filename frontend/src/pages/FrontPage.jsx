@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function FrontPage() {
+function FrontPage({ user }) {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -11,22 +11,26 @@ function FrontPage() {
 
   return (
     <div className="min-h-screen text-black p-6">
+      {/* Header */}
       <div className="flex justify-between items-center mb-10">
         <h1 className="text-4xl font-bold font-serif">LegacyNest</h1>
 
+        {/* Right section: Welcome + Profile */}
         <div className="flex items-center gap-4 relative">
-          <p className="text-xl text-gray-800 font-serif">Welcome back, Test User</p>
+          <p className="text-xl text-gray-800 font-serif">
+            Welcome back, {user.name}
+          </p>
 
           <div className="relative">
             <img
-              src="https://i.pravatar.cc/40"
+              src={user.avatar || "https://i.pravatar.cc/40"}
               alt="Profile"
               className="w-10 h-10 rounded-full border-2 border-gray-300 cursor-pointer"
               onClick={toggleDropdown}
             />
 
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded  p-2 z-10">
+              <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded p-2 z-10">
                 <p
                   className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
                   onClick={() => navigate("/profile")}
@@ -39,13 +43,16 @@ function FrontPage() {
                 >
                   Settings
                 </p>
-                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer">Logout</p>
+                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer">
+                  Logout
+                </p>
               </div>
             )}
           </div>
         </div>
       </div>
 
+      {/* Main cards section */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
         <div
           onClick={() => navigate("/timeline")}
@@ -87,6 +94,7 @@ function FrontPage() {
         </div>
       </div>
 
+      {/* Recently added section */}
       <div>
         <h2 className="text-2xl font-serif mb-4">Recently Added</h2>
       </div>

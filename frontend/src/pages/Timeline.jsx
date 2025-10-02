@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-export default function Timeline() {
+export default function Timeline({user}) {
   const [stories, setStories] = useState([]);
 
   useEffect(() => {

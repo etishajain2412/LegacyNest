@@ -1,41 +1,54 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-//import FrontPage from "./pages/frontpage";
-// import Upload from "./pages/Upload";
-// import Timeline from "./pages/Timeline";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import FrontPage from "./pages/frontpage";
+import Upload from "./pages/Upload";
+import Timeline from "./pages/Timeline";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import { useState } from "react";
 
-// function App() {
-//   const user = { id: "6521f30abc1234567890abcd", name: "Test User" };
-
-//   return (
-//     <Router>
-//       <Routes>
-//         <Route path="/" element={<FrontPage />} />
-//         <Route path="/upload" element={<Upload user={user} />} />
-//         <Route path="/timeline" element={<Timeline />} />
-//       </Routes>
-//     </Router>
-//   );
-// }
-
-
-function Profile() {
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-green-50">
-      <h1 className="text-2xl font-bold">Welcome to your Profile 🎉</h1>
-    </div>
-  );
+function ProtectedRoute({ user, children }) {
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
 }
 
 export default function App() {
+  const [user, setUser] = useState(null); 
+
   return (
     <Router>
       <Routes>
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="*" element={<Login />} /> {/* default to login */}
+        <Route path="/register" element={<Register setUser={setUser} />} />
+        <Route path="/login" element={<Login setUser={setUser} />} />
+
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute user={user}>
+              <FrontPage user={user} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/upload"
+          element={
+            <ProtectedRoute user={user}>
+              <Upload user={user} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/timeline"
+          element={
+            <ProtectedRoute user={user}>
+              <Timeline user={user} />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Default */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
   );
