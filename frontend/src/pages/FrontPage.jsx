@@ -4,18 +4,75 @@ import { useNavigate } from "react-router-dom";
 function FrontPage({ user }) {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
   };
 
+  const recentlyAddedPosts = [
+    {
+      id: 1,
+      title: "Autumn Collection",
+      description: "Warm hues and cozy fabrics for the season.",
+      image:
+        "https://i.pinimg.com/736x/99/86/2c/99862c0e0662aa2efa0114dca43a16c4.jpg",
+      tags: ["fall", "fashion", "warm", "seasonal"],
+    },
+    {
+      id: 2,
+      title: "Summer Collection",
+      description: "Bright colors and light textures.",
+      image:
+        "https://i.pinimg.com/736x/29/dc/22/29dc22bcba28ac2d5acbbafdd2642c54.jpg",
+      tags: ["summer", "light", "beach", "vibrant"],
+    },
+    {
+      id: 3,
+      title: "Museum Art in Your Home",
+      description: "Poster art for every mood.",
+      image:
+        "https://i.pinimg.com/1200x/57/9f/64/579f64ef67cef27fa1eab073b54ba403.jpg",
+      tags: ["art", "poster", "museum", "decor"],
+    },
+    {
+      id: 1,
+      title: "Autumn Collection",
+      description: "Warm hues and cozy fabrics for the season.",
+      image:
+        "https://i.pinimg.com/736x/99/86/2c/99862c0e0662aa2efa0114dca43a16c4.jpg",
+      tags: ["fall", "fashion", "warm", "seasonal"],
+    },
+    {
+      id: 2,
+      title: "Summer Collection",
+      description: "Bright colors and light textures.",
+      image:
+        "https://i.pinimg.com/736x/29/dc/22/29dc22bcba28ac2d5acbbafdd2642c54.jpg",
+      tags: ["summer", "light", "beach", "vibrant"],
+    },
+    {
+      id: 3,
+      title: "Museum Art in Your Home",
+      description: "Poster art for every mood.",
+      image:
+        "https://i.pinimg.com/1200x/57/9f/64/579f64ef67cef27fa1eab073b54ba403.jpg",
+      tags: ["art", "poster", "museum", "decor"],
+    },
+  ];
+
+  const filteredPosts = recentlyAddedPosts.filter((post) => {
+    const query = searchQuery.toLowerCase();
+    const inTitle = post.title.toLowerCase().includes(query);
+    const inTags = post.tags.some((tag) => tag.toLowerCase().includes(query));
+    return inTitle || inTags;
+  });
+
   return (
     <div className="min-h-screen text-black p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-10">
+      <div className="flex justify-between items-center mb-10 border-2 p-4">
         <h1 className="text-4xl font-bold font-serif">LegacyNest</h1>
 
-        {/* Right section: Welcome + Profile */}
         <div className="flex items-center gap-4 relative">
           <p className="text-xl text-gray-800 font-serif">
             Welcome back, {user.name}
@@ -52,7 +109,6 @@ function FrontPage({ user }) {
         </div>
       </div>
 
-      {/* Main cards section */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
         <div
           onClick={() => navigate("/timeline")}
@@ -94,9 +150,54 @@ function FrontPage({ user }) {
         </div>
       </div>
 
-      {/* Recently added section */}
       <div>
         <h2 className="text-2xl font-serif mb-4">Recently Added</h2>
+
+        <div className="mb-6">
+          <input
+            type="text"
+            placeholder="Search posts by title or tags..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full p-3 border-2 rounded focus:outline-none focus:ring focus:border-gray-700"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {filteredPosts.length > 0 ? (
+            filteredPosts.map((post) => (
+              <div
+                key={post.id}
+                className="bg-white border border-gray-200 shadow-sm rounded overflow-hidden hover:shadow-md transition cursor-pointer"
+                onClick={() => navigate(`/post/${post.id}`)}
+              >
+                <img
+                  src={post.image}
+                  alt={post.title}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-4 border-2">
+                  <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
+                  <p className="text-gray-600 text-sm">{post.description}</p>
+                  <div className="mt-2 flex flex-wrap gap-1 text-xs text-gray-500">
+                    {post.tags.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-gray-100 px-2 py-1 rounded-full"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500 text-center col-span-full">
+              No posts match your search.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
