@@ -3,7 +3,7 @@ const multer = require("multer");
 const { Readable } = require("stream");
 const cloudinary = require("../configs/cloudinary"); 
 const Story = require("../models/Story");
-const User = require("../models/User");
+const User = require("../models/user");
 
 const router = express.Router();
 const storage = multer.memoryStorage();
