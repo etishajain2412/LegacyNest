@@ -36,7 +36,7 @@ function FrontPage({ user }) {
       tags: ["art", "poster", "museum", "decor"],
     },
     {
-      id: 1,
+      id: 4,
       title: "Autumn Collection",
       description: "Warm hues and cozy fabrics for the season.",
       image:
@@ -44,7 +44,7 @@ function FrontPage({ user }) {
       tags: ["fall", "fashion", "warm", "seasonal"],
     },
     {
-      id: 2,
+      id: 5,
       title: "Summer Collection",
       description: "Bright colors and light textures.",
       image:
@@ -52,7 +52,7 @@ function FrontPage({ user }) {
       tags: ["summer", "light", "beach", "vibrant"],
     },
     {
-      id: 3,
+      id: 6,
       title: "Museum Art in Your Home",
       description: "Poster art for every mood.",
       image:

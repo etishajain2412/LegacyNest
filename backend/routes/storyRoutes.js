@@ -20,20 +20,7 @@ function uploadBufferToCloudinary(buffer, options = {}) {
   });
 }
 
-// --- Helper: get or create dummy user ---
-async function getDummyUser() {
-  let user = await User.findOne({ email: "dummy@example.com" });
-  if (!user) {
-    user = new User({
-      name: "Dummy User",
-      email: "dummy@example.com",
-      password: "dummy123", // placeholder
-    });
-    await user.save();
-    console.log("Dummy user created:", user._id);
-  }
-  return user;
-}
+
 
 // --- POST /api/stories ---
 router.post("/", upload.single("file"), async (req, res) => {
@@ -43,11 +30,15 @@ router.post("/", upload.single("file"), async (req, res) => {
 
     const { title, content = "", tags = "", date, mediaType, userId } = req.body;
 
-    if (!title || !date) {
+    if (!title || !date || !userId) {
       return res.status(400).json({ success: false, error: "Missing required fields" });
     }
 
-    const dummyUser = await getDummyUser();
+    // ✅ Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
 
     let mediaUrl = "";
     let publicId = "";
@@ -70,7 +61,7 @@ router.post("/", upload.single("file"), async (req, res) => {
     }
 
     const story = new Story({
-      userId: userId || dummyUser._id,
+      userId: user._id,
       title,
       content: mediaType === "text" ? content : "",
       tags: tags ? tags.split(",").map((t) => t.trim()) : [],
@@ -90,6 +81,7 @@ router.post("/", upload.single("file"), async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 // --- GET /api/stories ---
 router.get("/", async (req, res) => {
