@@ -2,8 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./configs/db');
+const eventsRouter = require("./routes/events");
 
 dotenv.config();
+console.log('Loaded MONGO_URI:', process.env.MONGO_URI);
+
 connectDB();
 
 const app = express();
@@ -13,6 +16,9 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
+
+app.use("/api/events", eventsRouter);
+
 
 app.get('/', (req, res) => {
   res.send('🚀 Backend server is running!');

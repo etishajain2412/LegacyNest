@@ -1,1 +1,114 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Radii */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* 🎨 Brand colors (light mode) */
+  --color-background: #ffffff;   /* white */
+  --color-foreground: #111111;   /* dark text */
+  --color-primary: #4b0f0f;      /* rich heritage red */
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f4f4f4;
+  --color-secondary-foreground: #111111;
+  --color-muted: #f4f4f4;
+  --color-muted-foreground: #666666;
+  --color-accent: #f2b03b;       /* heritage gold */
+  --color-accent-foreground: #111111;
+  --color-destructive: #e3342f;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e5e5e5;
+  --color-input: #e5e5e5;
+  --color-ring: #999999;
+  --color-card: #ffffff;
+  --color-card-foreground: #111111;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #111111;
+
+  /* Sidebar */
+  --color-sidebar-background: #f9f9f9;
+  --color-sidebar-foreground: #111111;
+  --color-sidebar-primary: #4b0f0f;
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-accent: #f2b03b;
+  --color-sidebar-accent-foreground: #111111;
+  --color-sidebar-border: #e5e5e5;
+  --color-sidebar-ring: #999999;
+}
+
+:root {
+  --radius: 0.625rem;
+}
+
+/* 🌙 Dark mode overrides */
+.dark {
+  --color-background: #111111;
+  --color-foreground: #ffffff;
+
+  --color-primary: #d57a7a; /* lighter heritage red for dark mode */
+  --color-primary-foreground: #111111;
+
+  --color-secondary: #333333;
+  --color-secondary-foreground: #ffffff;
+
+  --color-muted: #333333;
+  --color-muted-foreground: #cccccc;
+
+  --color-accent: #f2b03b;
+  --color-accent-foreground: #111111;
+
+  --color-border: #444444;
+  --color-input: #444444;
+  --color-ring: #666666;
+
+  --color-card: #1c1c1c;
+  --color-card-foreground: #f9f9f9;
+
+  --color-popover: #1c1c1c;
+  --color-popover-foreground: #f9f9f9;
+
+  --color-sidebar-background: #1c1c1c;
+  --color-sidebar-foreground: #ffffff;
+  --color-sidebar-primary: #d57a7a;
+  --color-sidebar-primary-foreground: #111111;
+  --color-sidebar-accent: #f2b03b;
+  --color-sidebar-accent-foreground: #111111;
+  --color-sidebar-border: #333333;
+  --color-sidebar-ring: #666666;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Extended theme: animations + radii */
+@theme {
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
