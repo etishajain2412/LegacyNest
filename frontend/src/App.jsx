@@ -5,6 +5,9 @@ import Timeline from "./pages/Timeline";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
+import Dashboard from "./pages/Dashboard";
+import Stories from "./pages/Stories";
+import FamilyCircles from "./pages/FamilyCircles";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 
@@ -74,7 +77,35 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        {/* Dashboard - Main landing after login */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute user={user}>
+              <Dashboard user={user} setUser={setUser} />
+            </ProtectedRoute>
+          }
+        />
 
+        {/* Stories Management */}
+        <Route
+          path="/stories"
+          element={
+            <ProtectedRoute user={user}>
+              <Stories user={user} />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Family Circles */}
+        <Route
+          path="/circles"
+          element={
+            <ProtectedRoute user={user}>
+              <FamilyCircles user={user} />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>

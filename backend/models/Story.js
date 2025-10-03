@@ -14,6 +14,11 @@ const StorySchema = new mongoose.Schema({
   mediaUrl: { type: String, default: "" },
   publicId: { type: String, default: "" },
   cloudinaryResponse: { type: mongoose.Schema.Types.Mixed },
+  visibility: {
+    type: String,
+    enum: ['private', 'family'],
+    default: 'private'
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

@@ -118,6 +118,13 @@ function FrontPage({ user , setUser}) {
                 >
                   Settings
                 </p>
+                <p
+                  className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Dashboard
+                </p>
+                
                 <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={handleLogout}>
                   Logout
                 </p>
