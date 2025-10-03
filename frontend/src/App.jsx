@@ -4,6 +4,7 @@ import Upload from "./pages/Upload";
 import Timeline from "./pages/Timeline";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import BackButton from "./components/Back";
 import Profile from "./pages/Profile";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
@@ -35,6 +36,8 @@ export default function App() {
 
   return (
     <Router>
+
+      <BackButton />
       <Routes>
         <Route path="/register" element={<Register setUser={setUser} />} />
         <Route path="/login" element={<Login setUser={setUser} />} />

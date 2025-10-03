@@ -77,9 +77,9 @@ const Profile = ({ user, setUser }) => {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border-1">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Profile</h1>
+            <h1 className="text-2xl font-serif font-semibold">Profile</h1>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -102,15 +102,15 @@ const Profile = ({ user, setUser }) => {
             <div className="md:col-span-2">
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">
+                  <h3 className="text-lg font-semibold mb-4 font-serif">
                     Account Settings
                   </h3>
 
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 p-4 rounded-lg border-1">
                     {!editName ? (
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center ">
                         <div>
-                          <p className="font-medium">Name</p>
+                          <p className="font-medium ">Name</p>
                           <p className="text-gray-600">{user?.name}</p>
                         </div>
                         <button
@@ -157,7 +157,7 @@ const Profile = ({ user, setUser }) => {
                     )}
                   </div>
 
-                  <div className="bg-gray-50 p-4 rounded-lg mt-4">
+                  <div className="bg-gray-50 p-4 rounded-lg mt-4 border-1">
                     {!changePassword ? (
                       <div className="flex justify-between items-center">
                         <div>
