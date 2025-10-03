@@ -5,7 +5,7 @@ export default function BackButton() {
   const navigate = useNavigate();
 
   if (location.pathname === "/profile") return null;
-    console.log("Current path:", location.pathname);
+    //console.log("Current path:", location.pathname);
   return (
     <button
       onClick={() => navigate(-1)}

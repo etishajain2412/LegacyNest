@@ -9,7 +9,6 @@ const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// --- Helper: upload buffer to Cloudinary ---
 function uploadBufferToCloudinary(buffer, options = {}) {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(options, (err, result) => {
@@ -22,7 +21,7 @@ function uploadBufferToCloudinary(buffer, options = {}) {
 
 
 
-// --- POST /api/stories ---
+// POST STORIES WITH MEDIA UPLOAD
 router.post("/", upload.single("file"), async (req, res) => {
   try {
     console.log("req.body:", req.body);
@@ -34,7 +33,6 @@ router.post("/", upload.single("file"), async (req, res) => {
       return res.status(400).json({ success: false, error: "Missing required fields" });
     }
 
-    // ✅ Check if user exists
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, error: "User not found" });
@@ -83,7 +81,7 @@ router.post("/", upload.single("file"), async (req, res) => {
 });
 
 
-// --- GET /api/stories ---
+// GET-> FOR ALL STORIES
 router.get("/", async (req, res) => {
   try {
     const stories = await Story.find()
@@ -96,5 +94,38 @@ router.get("/", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+
+// GET-> ONLY THE LOGGED-IN USER'S STORIES
+router.get("/mine/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const stories = await Story.find({ userId })
+      .populate("userId", "name")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, stories });
+  } catch (err) {
+    console.error("Error fetching user's stories:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+
+// GET-> OTHER USERS' STORIES EXCLUDING THE LOGGED-IN USER'S
+router.get("/others/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const stories = await Story.find({ userId: { $ne: userId } })
+      .populate("userId", "name")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, stories });
+  } catch (err) {
+    console.error("Error fetching other users' stories:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 module.exports = router;

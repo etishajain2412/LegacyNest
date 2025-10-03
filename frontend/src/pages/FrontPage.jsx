@@ -137,7 +137,7 @@ function FrontPage({ user , setUser}) {
             alt="Recent"
             className="w-full h-40 object-cover rounded-t-lg mb-4"
           />
-          <h2 className="font-semibold text-lg">Show My Timeline</h2>
+          <h2 className="font-semibold text-lg">Show Timeline</h2>
           <p className="text-gray-400 text-sm">The latest updates.</p>
         </div>
 
