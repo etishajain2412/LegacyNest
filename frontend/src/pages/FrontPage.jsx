@@ -1,13 +1,31 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 
-function FrontPage({ user }) {
+function FrontPage({ user , setUser}) {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
+  };
+
+   const handleLogout = async () => {
+    try {
+      await axiosInstance.post("/auth/logout");
+      Cookies.remove("accessToken");
+      Cookies.remove("refreshToken");
+      Cookies.remove("user");
+      setUser(null);
+      navigate("/login");
+    } catch (error) {
+      Cookies.remove("accessToken");
+      Cookies.remove("refreshToken");
+      Cookies.remove("user");
+      setUser(null);
+      navigate("/login");
+    }
   };
 
   const recentlyAddedPosts = [
@@ -90,7 +108,7 @@ function FrontPage({ user }) {
               <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded p-2 z-10">
                 <p
                   className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
-                  onClick={() => navigate("/profile")}
+                  onClick={() => navigate("/profilepage")}
                 >
                   Profile
                 </p>
@@ -100,7 +118,7 @@ function FrontPage({ user }) {
                 >
                   Settings
                 </p>
-                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer">
+                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={handleLogout}>
                   Logout
                 </p>
               </div>

@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
 import Cookies from "js-cookie";
 
-const Login = ({setUser}) => {
+const Login = ({ setUser }) => {
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",
@@ -16,14 +16,13 @@ const Login = ({setUser}) => {
   const location = useLocation();
 
   useEffect(() => {
-    if (Cookies.get("accessToken")) {
-      navigate("/profile");
-    }
-
     const params = new URLSearchParams(location.search);
     const error = params.get("error");
+
     if (error) {
       setErrorMessage(error);
+    } else if (Cookies.get("user") && !location.state?.fromApp) {
+      navigate("/profile");
     }
   }, [location, navigate]);
 
@@ -35,23 +34,22 @@ const Login = ({setUser}) => {
     e.preventDefault();
     setLoading(true);
     setErrorMessage("");
-    
     try {
       const response = await axiosInstance.post("/auth/login", formData);
-      
       const { accessToken, user } = response.data;
-      
-      Cookies.set('accessToken', accessToken, { 
+
+      Cookies.set("accessToken", accessToken, {
         expires: new Date(Date.now() + 15 * 60 * 1000),
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
       });
-      
-      Cookies.set('user', JSON.stringify(user), { 
+
+      Cookies.set("user", JSON.stringify(user), {
         expires: new Date(Date.now() + 15 * 60 * 1000),
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
       });
+
       setUser(user);
       navigate("/profile");
     } catch (error) {
@@ -120,7 +118,7 @@ const Login = ({setUser}) => {
 
           <button
             type="submit"
-            className="w-full bg-gray-900 text-white py-2 rounded hover:bg-gray-700 transition"
+            className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
             disabled={loading}
           >
             {loading ? "Logging in..." : "Login"}

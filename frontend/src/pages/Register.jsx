@@ -3,10 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
 import Cookies from "js-cookie";
 
-const Register = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
+const Register = ({ setUser }) => {
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -14,24 +11,33 @@ const Register = () => {
     password: "",
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    if (Cookies.get("accessToken")) {
+    // Redirect if already logged in
+    if (Cookies.get("user") && !location.state?.fromApp) {
       navigate("/profile");
     }
-    
+
+    // Handle error message passed via URL (e.g., from Google OAuth)
     const params = new URLSearchParams(location.search);
-    const errorMessage = params.get("error");
-    if (errorMessage) {
-      setError(errorMessage);
+    const error = params.get("error");
+    if (error) {
+      setErrorMessage(error);
     }
   }, [location, navigate]);
 
   const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
   const validateForm = () => {
@@ -49,55 +55,59 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    setErrorMessage("");
     setSuccessMessage("");
+    setLoading(true);
 
     const validationError = validateForm();
     if (validationError) {
-      setError(validationError);
+      setErrorMessage(validationError);
       setLoading(false);
       return;
     }
 
     try {
       const response = await axiosInstance.post("/auth/register", formData);
-      
       const { accessToken, user } = response.data;
-      
-      Cookies.set('accessToken', accessToken, { 
+
+      // Save tokens in cookies
+      Cookies.set("accessToken", accessToken, {
         expires: new Date(Date.now() + 15 * 60 * 1000),
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
       });
-      
-      Cookies.set('user', JSON.stringify(user), { 
+
+      Cookies.set("user", JSON.stringify(user), {
         expires: new Date(Date.now() + 15 * 60 * 1000),
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
       });
-      
+
+      setUser(user);
       setSuccessMessage("Registration successful! Redirecting...");
-      setTimeout(() => navigate("/profile"), 2000);
-    } catch (err) {
-      setError(err.response?.data?.message || "Server error. Please try again.");
+      setTimeout(() => navigate("/profile"), 1500);
+    } catch (error) {
+      setErrorMessage(error.response?.data?.message || "Registration failed.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleAuth = () => {
+  const handleGoogleRegister = () => {
     window.location.href = `${axiosInstance.defaults.baseURL}/auth/google?state=register`;
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center mb-4">Register</h2>
+        <h2 className="text-2xl font-bold text-center mb-2">Register</h2>
+        <p className="text-sm text-gray-600 text-center mb-4">
+          Create your account to get started
+        </p>
 
-        {error && (
+        {errorMessage && (
           <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4">
-            {error}
+            {errorMessage}
           </div>
         )}
         {successMessage && (
@@ -107,45 +117,78 @@ const Register = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="text"
-            name="name"
-            placeholder="Full Name"
-            value={formData.name}
-            onChange={handleChange}
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500"
-            required
-          />
-          <input
-            type="text"
-            name="username"
-            placeholder="Username"
-            value={formData.username}
-            onChange={handleChange}
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500"
-            required
-          />
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500"
-            required
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500"
-            required
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Full Name
+            </label>
+            <input
+              type="text"
+              name="name"
+              placeholder="Enter your full name"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Username
+            </label>
+            <input
+              type="text"
+              name="username"
+              placeholder="Choose a username"
+              value={formData.username}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Create a password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500"
+                required
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 text-sm"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </div>
+
           <button
             type="submit"
-            className="w-full bg-gray-900 text-white py-2 rounded hover:bg-gray-700 transition"
+            className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
             disabled={loading}
           >
             {loading ? "Registering..." : "Register"}
@@ -159,7 +202,7 @@ const Register = () => {
         </div>
 
         <button
-          onClick={handleGoogleAuth}
+          onClick={handleGoogleRegister}
           className="w-full flex items-center justify-center gap-2 border py-2 rounded hover:bg-gray-100 transition"
         >
           <img

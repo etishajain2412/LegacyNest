@@ -8,6 +8,7 @@ const passport=require('./configs/passport')
 //Routes
 const authRoutes=require('./routes/authRoutes')
 const storyRoutes = require('./routes/storyRoutes.js');
+const profileRoutes = require('./routes/profileRoutes.js');
 
 dotenv.config();
 connectDB();
@@ -32,6 +33,7 @@ app.get('/', (req, res) => {
 //apis
 app.use('/api/stories', storyRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/profile',profileRoutes);
 
 const PORT = process.env.PORT || 5000;
 

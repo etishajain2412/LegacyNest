@@ -4,7 +4,9 @@ import Upload from "./pages/Upload";
 import Timeline from "./pages/Timeline";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
-import { useState } from "react";
+import Profile from "./pages/Profile";
+import { useState, useEffect } from "react";
+import Cookies from "js-cookie";
 
 function ProtectedRoute({ user, children }) {
   if (!user) {
@@ -14,7 +16,22 @@ function ProtectedRoute({ user, children }) {
 }
 
 export default function App() {
-  const [user, setUser] = useState(null); 
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const userCookie = Cookies.get("user");
+    const accessToken = Cookies.get("accessToken");
+
+    if (userCookie) {
+      try {
+        const userData = JSON.parse(userCookie);
+        setUser(userData);
+      } catch (error) {
+        Cookies.remove("user");
+        Cookies.remove("accessToken");
+      }
+    }
+  }, []);
 
   return (
     <Router>
@@ -23,13 +40,23 @@ export default function App() {
         <Route path="/login" element={<Login setUser={setUser} />} />
 
         <Route
-          path="/profile"
+          path="/profilepage"
           element={
             <ProtectedRoute user={user}>
-              <FrontPage user={user} />
+              <Profile user={user} setUser={setUser} />
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute user={user}>
+              <FrontPage user={user} setUser={setUser}/>
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/upload"
           element={
@@ -38,6 +65,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/timeline"
           element={
@@ -47,7 +75,6 @@ export default function App() {
           }
         />
 
-        {/* Default */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>

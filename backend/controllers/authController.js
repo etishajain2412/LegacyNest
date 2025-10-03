@@ -129,6 +129,7 @@ const login = async (req, res) => {
   }
 };
 
+// ---------------- REFRESH TOKEN ----------------
 const refreshAccessToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
@@ -215,10 +216,22 @@ const googleCallback = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
+    const userData = {
+      id: user._id,
+      name: user.name,
+      username: user.username,
+      email: user.email
+    };
+    
+    res.cookie('user', JSON.stringify(userData), {
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
+    });
+
     res.redirect("http://localhost:3000/profile");
 
   } catch (error) {
-    console.error("Error during Google authentication:", error);
     res.redirect("http://localhost:3000/login?error=Server error during authentication.");
   }
 };
@@ -226,21 +239,20 @@ const googleCallback = async (req, res) => {
 const logout = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
-    
+
     if (refreshToken) {
       const decoded = jwt.decode(refreshToken);
-      if (decoded && decoded.id) {
+      if (decoded?.id) {
         await User.findByIdAndUpdate(decoded.id, { refreshToken: null });
       }
     }
 
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
-    
+
     res.status(200).json({ message: 'Logged out successfully' });
 
   } catch (error) {
-    console.error('Logout error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
