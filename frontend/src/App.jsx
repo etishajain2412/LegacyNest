@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import FrontPage from "./pages/frontpage";
 import Upload from "./pages/Upload";
 import Timeline from "./pages/Timeline";
+import ViewStory from "./pages/ViewStory";
+import EditStory from "./pages/EditStory";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import BackButton from "./components/Back";
@@ -36,7 +38,6 @@ export default function App() {
 
   return (
     <Router>
-
       <BackButton />
       <Routes>
         <Route path="/register" element={<Register setUser={setUser} />} />
@@ -55,7 +56,7 @@ export default function App() {
           path="/profile"
           element={
             <ProtectedRoute user={user}>
-              <FrontPage user={user} setUser={setUser}/>
+              <FrontPage user={user} setUser={setUser} />
             </ProtectedRoute>
           }
         />
@@ -74,6 +75,23 @@ export default function App() {
           element={
             <ProtectedRoute user={user}>
               <Timeline user={user} />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/stories/view/:id"
+          element={
+            <ProtectedRoute user={user}>
+              <ViewStory user={user} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stories/edit/:id"
+          element={
+            <ProtectedRoute user={user}>
+              <EditStory user={user} />
             </ProtectedRoute>
           }
         />

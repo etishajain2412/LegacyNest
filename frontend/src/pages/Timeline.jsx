@@ -1,24 +1,24 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Timeline({ user }) {
   const [stories, setStories] = useState([]);
-  const [view, setView] = useState("mine"); 
-  //view mine-> mine stories , family-> family stories
+  const [view, setView] = useState("mine");
   const [loading, setLoading] = useState(false);
-
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const navigate = useNavigate(); 
+  //console.log(user);
   useEffect(() => {
-    if (!user?.id) return; 
+    if (!user?.id) return;
 
     async function fetchStories() {
       try {
         setLoading(true);
 
-        let url = "";
-        if (view === "mine") {
-          url = `http://localhost:5000/api/stories/mine/${user.id}`;
-        } else if (view === "family") {
-          url = `http://localhost:5000/api/stories/`;
-        }
+        const url =
+          view === "mine"
+            ? `http://localhost:5000/api/stories/mine/${user.id}`
+            : `http://localhost:5000/api/stories/`;
 
         const res = await fetch(url);
         const data = await res.json();
@@ -39,6 +39,26 @@ export default function Timeline({ user }) {
 
     fetchStories();
   }, [view, user]);
+
+  async function handleDelete(id) {
+    if (!window.confirm("Are you sure you want to delete this story?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/stories/${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setStories((prev) => prev.filter((s) => s._id !== id));
+      } else {
+        alert("Failed to delete story.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting story.");
+    }
+  }
 
   return (
     <div className="relative flex flex-col items-center px-6 py-10 bg-gray-50 min-h-screen">
@@ -89,7 +109,48 @@ export default function Timeline({ user }) {
                 </div>
 
                 <div className="w-3/4 pl-6">
-                  <div className="bg-white rounded-xl shadow-lg p-6">
+                  <div className="bg-white rounded-xl shadow-lg p-6 relative">
+                    {view === "mine" && (
+                      <div className="absolute top-4 right-4">
+                        <button
+                          className="text-gray-600 font-bold text-xl cursor-pointer"
+                          onClick={() =>
+                            setOpenMenuId(
+                              openMenuId === story._id ? null : story._id
+                            )
+                          }
+                        >
+                          ⋮
+                        </button>
+                        {openMenuId === story._id && (
+                          <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border p-2 z-20">
+                            <button
+                              onClick={() =>
+                                navigate(`/stories/view/${story._id}`)
+                              }
+                              className="block w-full text-left px-3 py-1 rounded hover:bg-gray-100"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() =>
+                                navigate(`/stories/edit/${story._id}`)
+                              }
+                              className="block w-full text-left px-3 py-1 rounded hover:bg-gray-100"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(story._id)}
+                              className="block w-full text-left px-3 py-1 text-red-600 rounded hover:bg-gray-100"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <h3 className="text-xl font-semibold">{story.title}</h3>
                     <p className="text-gray-500 text-sm mb-3">
                       By {story.userId?.name || "Unknown"}
@@ -109,13 +170,11 @@ export default function Timeline({ user }) {
                         className="mt-2 w-full rounded-xl max-h-80 object-cover"
                       >
                         <source src={story.mediaUrl} type="video/mp4" />
-                        Your browser does not support video.
                       </video>
                     )}
                     {story.mediaType === "audio" && story.mediaUrl && (
                       <audio controls className="mt-2 w-full">
                         <source src={story.mediaUrl} type="audio/mpeg" />
-                        Your browser does not support audio.
                       </audio>
                     )}
                     {story.tags?.length > 0 && (
