@@ -19,7 +19,7 @@ router.get("/", getAllStories);
 router.get("/mine/:userId", getMyStories);
 router.get("/others/:userId", getOthersStories);
 router.get("/:id", getStoryById);
-router.put("/:id", updateStory);
+router.put("/:id",upload.single("file"), updateStory);
 router.delete("/:id", deleteStory);
 
 module.exports = router;

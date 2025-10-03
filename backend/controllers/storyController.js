@@ -107,22 +107,36 @@ const getStoryById = async (req, res) => {
 const updateStory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, content, tags } = req.body;
+    //console.log(req.body);
+    const { title, content = "", tags = "", mediaType, date } = req.body;
 
     const story = await Story.findById(id);
     if (!story) return res.status(404).json({ success: false, message: "Story not found" });
 
     story.title = title || story.title;
-    story.content = content !== undefined ? content : story.content;
-    story.tags = tags || story.tags;
+    story.content = mediaType === "text" ? content : story.content;
+    story.tags = tags ? tags.split(",").map(t => t.trim()) : story.tags;
+    story.date = date || story.date;
+    story.mediaType = mediaType || story.mediaType;
+
+    if (req.file && mediaType !== "text") {
+      const uploadRes = await uploadBufferToCloudinary(req.file.buffer, {
+        folder: "stories",
+        resource_type: "auto",
+      });
+      story.mediaUrl = uploadRes.secure_url;
+      story.publicId = uploadRes.public_id;
+      story.cloudinaryResponse = uploadRes;
+    }
 
     await story.save();
     res.json({ success: true, story });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
+
 
 //delete story
 const deleteStory = async (req, res) => {
