@@ -163,6 +163,7 @@ export default function Upload({ user }) {
         >
           <option value="private">Private</option>
           <option value="family">Family</option>
+          <option value="public">Public</option>
         </select>
 
         {/* Submit */}

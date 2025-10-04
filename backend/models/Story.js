@@ -16,7 +16,7 @@ const StorySchema = new mongoose.Schema({
   cloudinaryResponse: { type: mongoose.Schema.Types.Mixed },
   visibility: {
     type: String,
-    enum: ['private', 'family'],
+    enum: ['private', 'family', 'public'],
     default: 'private'
   },
   createdAt: { type: Date, default: Date.now }

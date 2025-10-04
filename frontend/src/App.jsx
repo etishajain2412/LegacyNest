@@ -8,6 +8,7 @@ import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import Stories from "./pages/Stories";
 import FamilyCircles from "./pages/FamilyCircles";
+import FeedPage from "./pages/FeedPage";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 
@@ -77,7 +78,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        {/* Dashboard - Main landing after login */}
         <Route
           path="/dashboard"
           element={
@@ -106,6 +106,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/feed" element={<ProtectedRoute user={user}><FeedPage user={user} /> </ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
