@@ -63,9 +63,15 @@ const Login = ({ setUser }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center mb-2">Login</h2>
+    <div
+      className="min-h-screen flex items-center justify-center bg-cover bg-center px-4"
+      style={{
+        backgroundImage:
+          "url('https://i.pinimg.com/736x/04/f6/ae/04f6ae6ce339bd24d9e2dd3369d6ff5b.jpg')",
+      }}
+    >
+      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md border-2 border-black">
+        <h2 className="text-2xl font-bold text-center mb-2 font-serif">Login</h2>
         <p className="text-sm text-gray-600 text-center mb-4">
           Enter your credentials to access your account
         </p>
@@ -76,9 +82,9 @@ const Login = ({ setUser }) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-3 ">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 ">
               Email or Username
             </label>
             <input
@@ -87,7 +93,7 @@ const Login = ({ setUser }) => {
               placeholder="Enter your email or username"
               value={formData.identifier}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500 "
               required
             />
           </div>

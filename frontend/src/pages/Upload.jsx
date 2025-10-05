@@ -48,13 +48,13 @@ export default function Upload({ user }) {
   }
 
   return (
-    <div className="flex justify-center mt-12">
+    <div className="flex justify-center mt-12 ">
       <form
         onSubmit={(e) => {
           e.preventDefault();
           handleSubmit();
         }}
-        className="flex flex-col gap-4 p-6 border rounded shadow w-1/2"
+        className="flex flex-col gap-4 p-6 border-2 border-black rounded shadow w-1/2 "
       >
         <h2 className="text-4xl font-serif font-bold text-gray-800 text-center">
           Upload New Story
@@ -64,14 +64,14 @@ export default function Upload({ user }) {
           placeholder="Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="p-2 border rounded"
+          className="p-2 border-2 border-black rounded"
           required
         />
 
         <select
           value={mediaType}
           onChange={(e) => setMediaType(e.target.value)}
-          className="p-2 border rounded"
+          className="p-2 border-2 border-black  rounded"
         >
           <option value="text">Text</option>
           <option value="photo">Photo</option>
@@ -85,7 +85,7 @@ export default function Upload({ user }) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={5}
-            className="p-2 border rounded"
+            className="p-2 border-1 border-black rounded"
             required
           />
         )}
@@ -130,14 +130,14 @@ export default function Upload({ user }) {
           placeholder="Tags (comma separated)"
           value={tags}
           onChange={(e) => setTags(e.target.value)}
-          className="p-2 border rounded"
+          className="p-2 border-2 border-black border rounded"
         />
 
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="p-2 border rounded"
+          className="p-2 border-2 border-black border rounded"
           required
         />
 

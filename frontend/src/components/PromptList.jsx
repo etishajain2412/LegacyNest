@@ -85,7 +85,7 @@ const PromptList = () => {
         <h2 className="text-xl font-semibold">Memory Prompts</h2>
         <div>
           <button
-            className="px-4 py-2 bg-[#7b1b1b] text-white rounded mr-2"
+            className="px-4 py-2 bg-gray-900 text-white rounded mr-2"
             onClick={handleGenerate}
             disabled={generating}
           >

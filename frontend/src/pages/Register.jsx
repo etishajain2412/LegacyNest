@@ -98,9 +98,10 @@ const Register = ({ setUser }) => {
   };
 
   return (
+    
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center mb-2">Register</h2>
+      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md border-2 border-black">
+        <h2 className="text-2xl font-bold text-center mb-2 font-serif">Register</h2>
         <p className="text-sm text-gray-600 text-center mb-4">
           Create your account to get started
         </p>

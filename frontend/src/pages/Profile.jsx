@@ -65,7 +65,7 @@ const Profile = ({ user, setUser }) => {
 
   return (
     <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-4xl mx-auto px-4 ">
         {message && (
           <div className="bg-green-100 text-green-700 px-4 py-2 rounded mb-4">
             {message}
@@ -77,7 +77,7 @@ const Profile = ({ user, setUser }) => {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md p-6 border-1">
+        <div className="bg-white rounded-lg shadow-md p-6 border-1 border-2 border-black">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-serif font-semibold">Profile</h1>
           </div>
@@ -106,7 +106,7 @@ const Profile = ({ user, setUser }) => {
                     Account Settings
                   </h3>
 
-                  <div className="bg-gray-50 p-4 rounded-lg border-1">
+                  <div className="bg-gray-50 p-4 rounded-lg border-1 border-2 border-black">
                     {!editName ? (
                       <div className="flex justify-between items-center ">
                         <div>
@@ -157,7 +157,7 @@ const Profile = ({ user, setUser }) => {
                     )}
                   </div>
 
-                  <div className="bg-gray-50 p-4 rounded-lg mt-4 border-1">
+                  <div className="bg-gray-50 p-4 rounded-lg mt-4 border-1 border-2 border-black">
                     {!changePassword ? (
                       <div className="flex justify-between items-center">
                         <div>
