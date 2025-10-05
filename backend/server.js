@@ -15,7 +15,7 @@ const authRoutes=require('./routes/authRoutes')
 const storyRoutes = require('./routes/storyRoutes.js');
 const profileRoutes = require('./routes/profileRoutes.js');
 const promptRoutes = require('./routes/promptRoutes')
-
+const CalendarEvent = require("./routes/calendarRoutes.js");
 
 dotenv.config();
 connectDB();
@@ -42,6 +42,7 @@ app.use('/api/stories', storyRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile',profileRoutes);
 app.use('/api/prompts', promptRoutes);
+app.use('/api/calendar', CalendarEvent);
 
 const server = http.createServer(app);
 // --- Socket.IO

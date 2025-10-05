@@ -114,9 +114,9 @@ function FrontPage({ user , setUser}) {
                 </p>
                 <p
                   className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer"
-                  onClick={() => navigate("/settings")}
+                  onClick={() => navigate("/calendar")}
                 >
-                  Settings
+                  Set Calendar
                 </p>
                 <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={handleLogout}>
                   Logout

@@ -11,7 +11,7 @@ import Profile from "./pages/Profile";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import PromptsPage from "./pages/PromptsPage"; 
-
+import CalendarPage from "./pages/Calendar";
 
 function ProtectedRoute({ user, children }) {
   if (!user) {
@@ -94,6 +94,14 @@ export default function App() {
           element={
             <ProtectedRoute user={user}>
               <EditStory user={user} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/calendar"
+          element={
+            <ProtectedRoute user={user}>
+              <CalendarPage user={user} />
             </ProtectedRoute>
           }
         />
