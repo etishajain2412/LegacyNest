@@ -10,6 +10,8 @@ import BackButton from "./components/Back";
 import Profile from "./pages/Profile";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
+import PromptsPage from "./pages/PromptsPage"; 
+
 
 function ProtectedRoute({ user, children }) {
   if (!user) {
@@ -92,6 +94,14 @@ export default function App() {
           element={
             <ProtectedRoute user={user}>
               <EditStory user={user} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/prompts"
+          element={
+            <ProtectedRoute user={user}>
+              <PromptsPage user={user} />
             </ProtectedRoute>
           }
         />
