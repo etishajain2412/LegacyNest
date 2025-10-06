@@ -1,4 +1,3 @@
-// pages/FeedPage.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Cookies from "js-cookie";
@@ -9,7 +8,7 @@ const FeedPage = ({ user }) => {
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState(null);
-  const [filter, setFilter] = useState("all"); // all, public, family, private
+  const [filter, setFilter] = useState("all");
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -18,7 +17,6 @@ const FeedPage = ({ user }) => {
     }
   }, [user, filter]);
 
-  // Sync filter with URL params
   useEffect(() => {
     const urlFilter = searchParams.get("filter");
     if (urlFilter && ["all", "public", "family", "private"].includes(urlFilter)) {
@@ -31,11 +29,9 @@ const FeedPage = ({ user }) => {
     try {
       const token = Cookies.get("accessToken");
       const endpoint = filter === "all" ? "/stories/feed" : `/stories/${filter}`;
-
       const { data } = await axiosInstance.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       setStories(data.stories || []);
       setStats(data.stats || null);
     } catch (error) {
@@ -54,40 +50,40 @@ const FeedPage = ({ user }) => {
   const getVisibilityIcon = (visibility) => {
     switch (visibility) {
       case "public":
-        return <Globe className="w-4 h-4 text-green-600" />;
+        return <Globe className="w-4 h-4 text-gray-800" />;
       case "family":
-        return <Users className="w-4 h-4 text-blue-600" />;
+        return <Users className="w-4 h-4 text-gray-800" />;
       case "private":
-        return <Lock className="w-4 h-4 text-gray-600" />;
+        return <Lock className="w-4 h-4 text-gray-800" />;
       default:
-        return <Globe className="w-4 h-4" />;
+        return <Globe className="w-4 h-4 text-gray-800" />;
     }
   };
 
   const getVisibilityColor = (visibility) => {
     switch (visibility) {
       case "public":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "bg-gray-100 text-gray-900 border-gray-300";
       case "family":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "bg-gray-100 text-gray-900 border-gray-300";
       case "private":
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-gray-100 text-gray-900 border-gray-300";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-900 border-gray-300";
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-white text-gray-900 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-3">
-              <Home className="w-8 h-8" />
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <Home className="w-8 h-8 text-gray-800" />
               Story Feed
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-500">
               Discover stories from your network and community
             </p>
           </div>
@@ -95,13 +91,13 @@ const FeedPage = ({ user }) => {
           <div className="flex gap-4 mt-4 sm:mt-0">
             <Link
               to="/stories"
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition"
+              className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white font-medium py-2 px-6 rounded-lg transition"
             >
               My Stories
             </Link>
             <Link
               to="/upload"
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition"
+              className="flex items-center gap-2 bg-gray-900 hover:bg-black text-white font-medium py-2 px-6 rounded-lg transition"
             >
               Upload New Story
             </Link>
@@ -109,45 +105,44 @@ const FeedPage = ({ user }) => {
         </div>
 
         {/* Stats and Filters */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            {/* Stats */}
             {stats && (
               <div className="flex flex-wrap gap-4">
-                <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg">
-                  <Globe className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-800">
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg">
+                  <Globe className="w-4 h-4 text-gray-800" />
+                  <span className="text-sm font-medium text-gray-800">
                     {stats.public} Public
                   </span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg">
-                  <Users className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-800">
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg">
+                  <Users className="w-4 h-4 text-gray-800" />
+                  <span className="text-sm font-medium text-gray-800">
                     {stats.family} Family
                   </span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
-                  <Lock className="w-4 h-4 text-gray-600" />
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg">
+                  <Lock className="w-4 h-4 text-gray-800" />
                   <span className="text-sm font-medium text-gray-800">
                     {stats.private} Private
                   </span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-lg">
-                  <span className="text-sm font-medium text-indigo-800">
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg">
+                  <span className="text-sm font-medium text-gray-800">
                     {stats.total} Total
                   </span>
                 </div>
               </div>
             )}
 
-            {/* Filter Buttons */}
+            {/* Filters */}
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => handleFilterChange("all")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition ${
                   filter === "all"
-                    ? "bg-indigo-600 text-white border-indigo-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    ? "bg-black text-white border-black"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
                 }`}
               >
                 <Filter className="w-4 h-4" />
@@ -157,8 +152,8 @@ const FeedPage = ({ user }) => {
                 onClick={() => handleFilterChange("public")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition ${
                   filter === "public"
-                    ? "bg-green-600 text-white border-green-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    ? "bg-black text-white border-black"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
                 }`}
               >
                 <Globe className="w-4 h-4" />
@@ -168,8 +163,8 @@ const FeedPage = ({ user }) => {
                 onClick={() => handleFilterChange("family")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition ${
                   filter === "family"
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    ? "bg-black text-white border-black"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
                 }`}
               >
                 <Users className="w-4 h-4" />
@@ -180,17 +175,15 @@ const FeedPage = ({ user }) => {
         </div>
 
         {/* Stories Feed */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
           {loading ? (
             <div className="flex flex-col items-center py-12">
-              <Loader2 className="animate-spin w-12 h-12 text-indigo-600" />
+              <Loader2 className="animate-spin w-12 h-12 text-gray-800" />
               <p className="text-gray-600 mt-4">Loading stories...</p>
             </div>
           ) : stories.length === 0 ? (
             <div className="text-center py-12">
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                No Stories Found
-              </h3>
+              <h3 className="text-xl font-semibold mb-2">No Stories Found</h3>
               <p className="text-gray-600 mb-6">
                 {filter === "all"
                   ? "There are no stories to display in your feed yet."
@@ -198,7 +191,7 @@ const FeedPage = ({ user }) => {
               </p>
               <Link
                 to="/upload"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-8 rounded-lg transition"
+                className="bg-black hover:bg-gray-800 text-white font-medium py-3 px-8 rounded-lg transition"
               >
                 Upload Your First Story
               </Link>
@@ -208,13 +201,12 @@ const FeedPage = ({ user }) => {
               {stories.map((story) => (
                 <div
                   key={story._id}
-                  className="bg-gray-50 rounded-xl p-6 border hover:border-indigo-300 transition"
+                  className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-gray-400 transition"
                 >
-                  {/* Story Header */}
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <span className="text-indigo-600 font-semibold text-sm">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                        <span className="text-gray-800 font-semibold text-sm">
                           {story.userId?.name?.charAt(0)?.toUpperCase() || "U"}
                         </span>
                       </div>
@@ -237,28 +229,17 @@ const FeedPage = ({ user }) => {
                         {getVisibilityIcon(story.visibility)}
                         <span className="capitalize">{story.visibility}</span>
                       </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          story.mediaType === "photo"
-                            ? "bg-blue-100 text-blue-800"
-                            : story.mediaType === "video"
-                            ? "bg-purple-100 text-purple-800"
-                            : story.mediaType === "audio"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
+                      <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border border-gray-300">
                         {story.mediaType}
                       </span>
                     </div>
                   </div>
 
-                  {/* Story Content */}
                   <div className="mb-4">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                    <h3 className="text-xl font-semibold mb-2">
                       {story.title}
                     </h3>
-                    
+
                     {story.content && (
                       <p className="text-gray-600 mb-3 line-clamp-3">
                         {story.content}
@@ -273,14 +254,6 @@ const FeedPage = ({ user }) => {
                       })}
                     </p>
 
-                    {/* Visibility Context */}
-                    {story.visibilityContext && (
-                      <p className="text-xs text-gray-500 mb-3 italic">
-                        {story.visibilityContext}
-                      </p>
-                    )}
-
-                    {/* Shared Circles */}
                     {story.sharedCircles && story.sharedCircles.length > 0 && (
                       <div className="mb-3">
                         <p className="text-xs text-gray-500 mb-1">
@@ -290,7 +263,7 @@ const FeedPage = ({ user }) => {
                           {story.sharedCircles.map((circle) => (
                             <span
                               key={circle._id}
-                              className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded border border-blue-200"
+                              className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded border border-gray-300"
                             >
                               {circle.name}
                             </span>
@@ -300,14 +273,13 @@ const FeedPage = ({ user }) => {
                     )}
                   </div>
 
-                  {/* Media Preview */}
                   {story.mediaUrl && (
                     <div className="mb-4">
                       {story.mediaType === "photo" && (
                         <img
                           src={story.mediaUrl}
                           alt={story.title}
-                          className="w-full max-w-md h-48 object-cover rounded-lg"
+                          className="w-full max-w-md h-48 object-cover rounded-lg grayscale"
                         />
                       )}
                       {story.mediaType === "video" && (
@@ -316,27 +288,24 @@ const FeedPage = ({ user }) => {
                           className="w-full max-w-md h-48 rounded-lg"
                         >
                           <source src={story.mediaUrl} type="video/mp4" />
-                          Your browser does not support the video tag.
                         </video>
                       )}
                       {story.mediaType === "audio" && (
                         <div className="w-full max-w-md">
                           <audio controls className="w-full">
                             <source src={story.mediaUrl} type="audio/mpeg" />
-                            Your browser does not support the audio tag.
                           </audio>
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* Tags */}
                   {story.tags?.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-4">
                       {story.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="px-2 py-1 rounded bg-white border text-xs text-gray-600"
+                          className="px-2 py-1 rounded bg-white border border-gray-300 text-xs text-gray-600"
                         >
                           #{tag}
                         </span>
@@ -344,13 +313,12 @@ const FeedPage = ({ user }) => {
                     </div>
                   )}
 
-                  {/* Footer */}
                   <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                     <span className="text-xs text-gray-500">
                       Created {new Date(story.createdAt).toLocaleDateString()}
                     </span>
                     {story.userId?._id === user?.id && (
-                      <span className="text-xs text-indigo-600 font-medium">
+                      <span className="text-xs text-black font-medium">
                         Your Story
                       </span>
                     )}

@@ -3,7 +3,6 @@ const router = express.Router();
 const familyCircleController = require("../controllers/familyCircleController");
 const { authenticateToken } = require("../middlewares/authMiddleware");
 
-// Apply auth middleware to all routes
 router.use(authenticateToken);
 
 // Create circle
