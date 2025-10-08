@@ -12,6 +12,8 @@ import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import PromptsPage from "./pages/PromptsPage"; 
 import CalendarPage from "./pages/Calendar";
+import StoryReport from "./pages/StoryReport";
+
 
 function ProtectedRoute({ user, children }) {
   if (!user) {
@@ -81,14 +83,9 @@ export default function App() {
           }
         />
 
-        <Route
-          path="/stories/view/:id"
-          element={
-            <ProtectedRoute user={user}>
-              <ViewStory user={user} />
-            </ProtectedRoute>
-          }
-        />
+
+
+        
         <Route
           path="/stories/edit/:id"
           element={
@@ -97,6 +94,16 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/stories/ai/:id"
+          element={
+            <ProtectedRoute user={user}>
+              <StoryReport user={user} />
+            </ProtectedRoute>
+          }
+        />
+        
         <Route
           path="/calendar"
           element={

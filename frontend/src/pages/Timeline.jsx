@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
-import domtoimage from "dom-to-image-more"; 
+import domtoimage from "dom-to-image-more";
 
 export default function Timeline({ user }) {
   const [stories, setStories] = useState([]);
@@ -48,19 +48,19 @@ export default function Timeline({ user }) {
     if (!input) return;
 
     try {
-      const scale = 2; 
+      const scale = 2;
       const style = {
-        transform: 'scale(' + scale + ')',
-        transformOrigin: 'top left',
+        transform: "scale(" + scale + ")",
+        transformOrigin: "top left",
         width: input.offsetWidth + "px",
         height: input.offsetHeight + "px",
-        background: "#ffffff" 
+        background: "#ffffff",
       };
 
-      const dataUrl = await domtoimage.toPng(input, { 
-        width: input.offsetWidth * scale, 
-        height: input.offsetHeight * scale, 
-        style 
+      const dataUrl = await domtoimage.toPng(input, {
+        width: input.offsetWidth * scale,
+        height: input.offsetHeight * scale,
+        style,
       });
 
       const pdf = new jsPDF("p", "mm", "a4");
@@ -146,31 +146,31 @@ export default function Timeline({ user }) {
             <div className="absolute right-0 mt-10 w-48 bg-white rounded-lg shadow-lg z-30 border-black border-2">
               <button
                 onClick={() => exportStories("text")}
-                className="block w-full text-left px-4 py-2 border-black  hover:bg-gray-100 border-t"
+                className="block w-full text-left px-4 py-2 border-black hover:bg-gray-100 border-t"
               >
                 Export Text Stories
               </button>
               <button
                 onClick={() => exportStories("photo")}
-                className="block w-full text-left px-4 py-2 border-black  hover:bg-gray-100 border-t"
+                className="block w-full text-left px-4 py-2 border-black hover:bg-gray-100 border-t"
               >
                 Export Image Stories
               </button>
               <button
                 onClick={() => exportStories("audio")}
-                className="block w-full text-left px-4 py-2 border-black  hover:bg-gray-100 border-t"
+                className="block w-full text-left px-4 py-2 border-black hover:bg-gray-100 border-t"
               >
                 Export Audio Stories
               </button>
               <button
                 onClick={() => exportStories("video")}
-                className="block w-full text-left px-4 py-2 border-black  hover:bg-gray-100 border-t"
+                className="block w-full text-left px-4 py-2 border-black hover:bg-gray-100 border-t"
               >
                 Export Video Stories
               </button>
               <button
                 onClick={exportAsPDF}
-                className="block w-full text-left px-4 py-2 border-black  hover:bg-gray-100 border-t"
+                className="block w-full text-left px-4 py-2 border-black hover:bg-gray-100 border-t"
               >
                 Export as PDF Book
               </button>
@@ -203,7 +203,7 @@ export default function Timeline({ user }) {
       ) : stories.length === 0 ? (
         <p>No stories yet...</p>
       ) : (
-        <div id="timeline-content" className="relative w-full max-w-5xl ">
+        <div id="timeline-content" className="relative w-full max-w-5xl">
           <div className="absolute left-1/4 top-0 h-full w-1 bg-gray-700"></div>
 
           <div className="flex flex-col gap-16">
@@ -297,6 +297,15 @@ export default function Timeline({ user }) {
                         Tags: {story.tags.join(", ")}
                       </p>
                     )}
+
+                    <div className="flex justify-end mt-4">
+                      <button
+                        onClick={() => navigate(`/stories/ai/${story._id}`)}
+                        className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg shadow hover:bg-blue-700 transition flex items-center gap-2"
+                      >
+                        <span>✨</span> Analyze Story
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
