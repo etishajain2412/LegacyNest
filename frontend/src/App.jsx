@@ -11,6 +11,7 @@ import FamilyCircles from "./pages/FamilyCircles";
 import FeedPage from "./pages/FeedPage";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
+import FamilyRoom from "./pages/FamilyRoom";
 
 function ProtectedRoute({ user, children }) {
   if (!user) {
@@ -106,6 +107,15 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+<Route
+  path="/familyroom"
+  element={
+    <ProtectedRoute user={user}>
+      <FamilyRoom user={user} />
+    </ProtectedRoute>
+  }
+/>
+
         <Route path="/feed" element={<ProtectedRoute user={user}><FeedPage user={user} /> </ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
