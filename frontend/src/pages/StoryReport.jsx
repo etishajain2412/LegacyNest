@@ -11,7 +11,15 @@ export default function StoryReport() {
         async function fetchStory() {
             try {
                 setLoading(true);
-                const res = await fetch(`http://localhost:5000/api/stories/${id}`);
+                //const res = await fetch(`http://localhost:5000/api/stories/${id}`);
+                const res = await fetch(`http://localhost:5000/api/stories/${id}`, {
+                    method: "GET",
+                    credentials: "include",  
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                });
+
                 const data = await res.json();
                 //console.log("Fetch data:", data);
                 if (data.success) setStory(data.story);

@@ -14,8 +14,11 @@ import FamilyCircles from "./pages/FamilyCircles";
 import FeedPage from "./pages/FeedPage";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
+import PromptsPage from "./pages/PromptsPage"; 
+import MatchesPage from "./pages/MatchesPage";
+
 import FamilyRoom from "./pages/FamilyRoom";
-import PromptsPage from "./pages/PromptsPage";
+
 import CalendarPage from "./pages/Calendar";
 import StoryReport from "./pages/StoryReport";
 import StoriesByCategory from "./pages/StoriesByCategory";
@@ -175,6 +178,14 @@ export default function App() {
           element={
             <ProtectedRoute user={user}>
               <PromptsPage user={user} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/matches"
+          element={
+            <ProtectedRoute user={user}>
+              <MatchesPage user={user} />
             </ProtectedRoute>
           }
         />

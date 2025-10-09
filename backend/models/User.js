@@ -1,3 +1,4 @@
+// backend/models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -24,14 +25,31 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
   },
+  // store birth year (e.g., 1998). optional
+  birthYear: {
+    type: Number,
+    min: 1900,
+    max: 2100,
+    default: undefined
+  },
   refreshToken: {
     type: String,
     default: null
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
+// Virtual computed age from birthYear
+userSchema.virtual('age').get(function() {
+  if (!this.birthYear) return undefined;
+  const now = new Date();
+  return now.getFullYear() - this.birthYear;
+});
+
+// Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   
@@ -48,9 +66,13 @@ userSchema.pre('save', async function(next) {
   }
 });
 
+// Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   if (!this.password) return false;
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+// <-- Safe export: reuse existing compiled model if present (prevents OverwriteModelError)
+module.exports = mongoose.models && mongoose.models.User
+  ? mongoose.models.User
+  : mongoose.model('User', userSchema);

@@ -7,8 +7,6 @@ const passport = require('./configs/passport');
 const { Server } = require("socket.io");
 const http = require("http");
 const jwt = require("jsonwebtoken");
-const mongoose = require("mongoose");
-
 // Utils
 const { setIo, register, unregisterBySocket } = require("./utils/socketManager");
 const { startPromptWorker } = require("./worker/promptWorker");
@@ -21,10 +19,10 @@ const authRoutes = require("./routes/authRoutes");
 const storyRoutes = require("./routes/storyRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const familyCircleRoutes = require("./routes/familyCircleRoutes");
-const promptRoutes = require('./routes/promptRoutes');
 const calendarRoutes = require("./routes/calendarRoutes");
 const collaborativeStoryRoutes = require("./routes/collaborativeStoryRoutes");
-
+const promptRoutes=require("./routes/promptRoutes")
+const matchRoutes=require("./routes/matchRoutes")
 dotenv.config();
 connectDB();
 
@@ -35,7 +33,7 @@ app.use(cookieParser());
 app.use(passport.initialize());
 
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin:  ["http://localhost:3000"],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
@@ -136,6 +134,9 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/circles", familyCircleRoutes);
 app.use("/api/prompts", promptRoutes);
 app.use("/api/calendar", calendarRoutes);
+app.use('/api/matches', matchRoutes); 
+
+
 app.use("/api/collab-stories", collaborativeStoryRoutes);
 
 // Root Route
