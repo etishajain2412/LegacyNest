@@ -319,40 +319,6 @@ export default function FamilyCircles({ user, setUser }) {
                   onClick={toggleDropdown}
                 />
 
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg border-2 border-gray-200 p-2 z-50">
-                    <p
-                      className="p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
-                      onClick={() => navigate("/profilepage")}
-                    >
-                      Profile
-                    </p>
-                    <p
-                      className="p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
-                      onClick={() => navigate("/settings")}
-                    >
-                      Settings
-                    </p>
-                    <p
-                      className="p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
-                      onClick={() => navigate("/dashboard")}
-                    >
-                      Dashboard
-                    </p>
-                    <p
-                      className="p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
-                      onClick={() => navigate("/feed")}
-                    >
-                      Feed
-                    </p>
-                    <p 
-                      className="p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
-                      onClick={handleLogout}
-                    >
-                      Logout
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           </div>

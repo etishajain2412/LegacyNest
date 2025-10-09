@@ -154,7 +154,7 @@ function FrontPage({ user, setUser }) {
                 <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={()=>navigate("/familyroom")}>
                   FamilyRoom
                 </p>
-                                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={handleLogout}>
+                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={handleLogout}>
                   Logout
                 </p>
               </div>
@@ -234,7 +234,7 @@ function FrontPage({ user, setUser }) {
           </div>
 
           <div
-            onClick={() => navigate("/upload")}
+            onClick={() => navigate("/circles")}
             className="p-6 border-2 shadow  border-black cursor-pointer text-center transition"
           >
             <img

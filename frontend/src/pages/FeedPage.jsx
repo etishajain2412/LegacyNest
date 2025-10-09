@@ -114,7 +114,7 @@ const FeedPage = ({ user }) => {
 
           <div className="flex gap-4 mt-4 sm:mt-0">
             <Link
-              to="/stories"
+              to="/timeline"
               className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white font-medium py-2 px-6 rounded-lg transition"
             >
               My Stories
