@@ -19,18 +19,15 @@ passport.use(
         const email = profile.emails[0].value;
         let user = await User.findOne({ email });
 
-        // Read state from query parameter
         const authState = req.query.state || 'login';
         console.log('Auth State:', authState);
 
         if (authState === 'register') {
           // Registration Flow
           if (user) {
-            // User exists but trying to register
             return done(null, false, { message: 'User already exists. Please login instead.' });
           } else {
-            // Create new user for registration
-            // Generate unique username
+
             const baseUsername = email.split('@')[0];
             let username = baseUsername;
             let counter = 1;
@@ -45,7 +42,7 @@ passport.use(
               name: profile.displayName,
               email,
               username: username,
-              password: null, // No password for Google auth
+              password: null,
             });
 
             await user.save();

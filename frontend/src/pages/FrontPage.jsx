@@ -87,8 +87,8 @@ function FrontPage({ user , setUser}) {
   });
 
   return (
-    <div className="min-h-screen text-black p-6">
-      <div className="flex justify-between items-center mb-10 border-2 p-4">
+    <div className="min-h-screen text-black p-6 ">
+      <div className="flex justify-between items-center mb-10 border-2 border-black p-4">
         <h1 className="text-4xl font-bold font-serif">LegacyNest</h1>
 
         <div className="flex items-center gap-4 relative">
@@ -107,7 +107,7 @@ function FrontPage({ user , setUser}) {
             {dropdownOpen && (
               <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded p-2 z-10">
                 <p
-                  className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
+                  className="p-2 hover:bg-gray-100 border-1 border-black cursor-pointer"
                   onClick={() => navigate("/profilepage")}
                 >
                   Profile
@@ -118,7 +118,26 @@ function FrontPage({ user , setUser}) {
                 >
                   Settings
                 </p>
-                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={handleLogout}>
+                <p
+                  className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Dashboard
+                </p>
+                                <p
+                  className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
+                  onClick={() => navigate("/feed")}
+                >
+                  Feed
+                </p>
+                
+                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={()=>navigate("/circles")}>
+                  Circles
+                </p>
+                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={()=>navigate("/familyroom")}>
+                  FamilyRoom
+                </p>
+                                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={handleLogout}>
                   Logout
                 </p>
               </div>
@@ -127,10 +146,10 @@ function FrontPage({ user , setUser}) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10 ">
         <div
           onClick={() => navigate("/timeline")}
-          className="p-6 border-2 shadow cursor-pointer text-center transition"
+          className="p-6 border-2 border-black shadow cursor-pointer text-center transition"
         >
           <img
             src="https://i.pinimg.com/736x/d7/ac/53/d7ac537e41fb328cc7c09a48f8c77c5a.jpg"
@@ -143,7 +162,7 @@ function FrontPage({ user , setUser}) {
 
         <div
           onClick={() => navigate("/upload")}
-          className="p-6 border-2 shadow cursor-pointer text-center transition"
+          className="p-6 border-2 shadow  border-black cursor-pointer text-center transition"
         >
           <img
             src="https://i.pinimg.com/1200x/58/81/ce/5881ce3a72ed1d557bb446daeb4b60b2.jpg"
@@ -155,8 +174,8 @@ function FrontPage({ user , setUser}) {
         </div>
 
         <div
-          onClick={() => navigate("/matches")}
-          className="p-6 border-2 shadow cursor-pointer text-center transition"
+          onClick={() => navigate("/prompts")}
+          className="p-6 border-2 shadow  border-black cursor-pointer text-center transition"
         >
           <img
             src="https://i.pinimg.com/736x/8d/84/22/8d842231a3b501d5c4f72f87e9b989b6.jpg"
@@ -169,24 +188,64 @@ function FrontPage({ user , setUser}) {
       </div>
 
       <div>
-        <h2 className="text-2xl font-serif mb-4">Recently Added</h2>
+        <h2 className="text-2xl font-serif mb-4">Recently Added Features</h2>
 
-        <div className="mb-6">
+        <div className="mb-6 ">
           <input
             type="text"
-            placeholder="Search posts by title or tags..."
+            placeholder="Explore posts by title or tags..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full p-3 border-2 rounded focus:outline-none focus:ring focus:border-gray-700"
+            className="w-full p-3 border-2 rounded border-black focus:outline-none focus:ring focus:border-gray-700"
           />
         </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10 ">
+        <div
+          onClick={() => navigate("/stories/categories")}
+          className="p-6 border-2 border-black shadow cursor-pointer text-center transition"
+        >
+          <img
+            src="https://i.pinimg.com/736x/f0/81/e9/f081e983d4101be636188eb8d7ab318f.jpg"
+            alt="Recent"
+            className="w-full h-40 object-cover rounded-t-lg mb-4"
+          />
+          <h2 className="font-semibold text-lg">Search Functionality</h2>
+          <p className="text-gray-400 text-sm">Find stories, media, and events quickly and easily.</p>
+        </div>
+
+        <div
+          onClick={() => navigate("/upload")}
+          className="p-6 border-2 shadow  border-black cursor-pointer text-center transition"
+        >
+          <img
+            src="https://i.pinimg.com/1200x/1d/6e/92/1d6e92a0254877af6e2a089e8c52b977.jpg"
+            alt="Stories"
+            className="w-full h-40 object-cover rounded-t-lg mb-4"
+          />
+          <h2 className="font-semibold text-lg">Private Family Circles</h2>
+          <p className="text-gray-400 text-sm">Share stories securely with selected family members.</p>
+        </div>
+
+        <div
+          onClick={() => navigate("/calendar")}
+          className="p-6 border-2 shadow  border-black cursor-pointer text-center transition"
+        >
+          <img
+            src="https://i.pinimg.com/1200x/76/2d/88/762d88957e42826729834d62212ab6c3.jpg"
+            alt="Memories"
+            className="w-full h-40 object-cover rounded-t-lg mb-4"
+          />
+          <h2 className="font-semibold text-lg">Set Calendar</h2>
+          <p className="text-gray-400 text-sm">Easily add, track, and highlight important family events and milestones on your calendar.</p>
+        </div>
+      </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {filteredPosts.length > 0 ? (
             filteredPosts.map((post) => (
               <div
                 key={post.id}
-                className="bg-white border border-gray-200 shadow-sm rounded overflow-hidden hover:shadow-md transition cursor-pointer"
+                className="bg-white border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition cursor-pointer"
                 onClick={() => navigate(`/post/${post.id}`)}
               >
                 <img
@@ -194,14 +253,14 @@ function FrontPage({ user , setUser}) {
                   alt={post.title}
                   className="w-full h-48 object-cover"
                 />
-                <div className="p-4 border-2">
+                <div className="p-4 border-2 border-black">
                   <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
-                  <p className="text-gray-600 text-sm">{post.description}</p>
+                  <p className="text-gray-600 text-sm ">{post.description}</p>
                   <div className="mt-2 flex flex-wrap gap-1 text-xs text-gray-500">
                     {post.tags.map((tag, idx) => (
                       <span
                         key={idx}
-                        className="bg-gray-100 px-2 py-1 rounded-full"
+                        className="bg-gray-100 px-2 py-1 rounded-full "
                       >
                         #{tag}
                       </span>

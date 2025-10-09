@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import axiosInstance from "../utils/axiosInstance"; 
+import Cookies from "js-cookie";
 
 export default function Upload({ user }) {
   const [title, setTitle] = useState("");
@@ -7,6 +9,7 @@ export default function Upload({ user }) {
   const [date, setDate] = useState("");
   const [mediaType, setMediaType] = useState("text");
   const [file, setFile] = useState(null);
+  const [visibility, setVisibility] = useState("private");
 
   async function handleSubmit() {
     if (!title || (!content && mediaType === "text") || !date) {
@@ -18,17 +21,22 @@ export default function Upload({ user }) {
     formData.append("userId", user.id);
     formData.append("title", title);
     formData.append("content", content);
-    formData.append("tags", tags);
+    formData.append("tags", JSON.stringify(tags.split(",").map(t => t.trim()))); // ✅ send as array
     formData.append("date", date);
     formData.append("mediaType", mediaType);
+    formData.append("visibility", visibility);
     if (file) formData.append("file", file);
 
     try {
-      const res = await fetch("http://localhost:5000/api/stories", {
-        method: "POST",
-        body: formData,
+      const token = Cookies.get("accessToken");
+
+      const { data } = await axiosInstance.post("/stories", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+        withCredentials: true,
       });
-      const data = await res.json();
 
       if (data.success) {
         alert("Story added!");
@@ -38,40 +46,43 @@ export default function Upload({ user }) {
         setDate("");
         setFile(null);
         setMediaType("text");
+        setVisibility("private"); // reset
       } else {
-        alert("Error adding story");
+        alert(data.error || "Error adding story");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Upload error:", err);
       alert("Server error");
     }
   }
 
   return (
-    <div className="flex justify-center mt-12">
+    <div className="flex justify-center mt-12 ">
       <form
         onSubmit={(e) => {
           e.preventDefault();
           handleSubmit();
         }}
-        className="flex flex-col gap-4 p-6 border rounded shadow w-1/2"
+        className="flex flex-col gap-4 p-6 border-2 border-black rounded shadow w-1/2 "
       >
         <h2 className="text-4xl font-serif font-bold text-gray-800 text-center">
           Upload New Story
         </h2>
 
+        {/* Title */}
         <input
           placeholder="Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="p-2 border rounded"
+          className="p-2 border-2 border-black rounded"
           required
         />
 
+        {/* Media Type */}
         <select
           value={mediaType}
           onChange={(e) => setMediaType(e.target.value)}
-          className="p-2 border rounded"
+          className="p-2 border-2 border-black  rounded"
         >
           <option value="text">Text</option>
           <option value="photo">Photo</option>
@@ -79,13 +90,14 @@ export default function Upload({ user }) {
           <option value="audio">Audio</option>
         </select>
 
+        {/* Content / File */}
         {mediaType === "text" && (
           <textarea
             placeholder="Write your story..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={5}
-            className="p-2 border rounded"
+            className="p-2 border-1 border-black rounded"
             required
           />
         )}
@@ -107,7 +119,7 @@ export default function Upload({ user }) {
               />
             </svg>
             <span className="text-gray-500">
-              {file ? file.name : `Drag & drop a ${mediaType} or click to select`}
+              {file ? file.name : `Upload a ${mediaType}`}
             </span>
             <input
               type="file"
@@ -115,8 +127,8 @@ export default function Upload({ user }) {
                 mediaType === "photo"
                   ? "image/*"
                   : mediaType === "video"
-                    ? "video/*"
-                    : "audio/*"
+                  ? "video/*"
+                  : "audio/*"
               }
               onChange={(e) => setFile(e.target.files[0])}
               className="hidden"
@@ -125,22 +137,36 @@ export default function Upload({ user }) {
           </label>
         )}
 
-
+        {/* Tags */}
         <input
           placeholder="Tags (comma separated)"
           value={tags}
           onChange={(e) => setTags(e.target.value)}
-          className="p-2 border rounded"
+          className="p-2 border-2 border-black border rounded"
         />
 
+        {/* Date */}
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="p-2 border rounded"
+          className="p-2 border-2 border-black border rounded"
           required
         />
 
+        {/* Visibility */}
+        <select
+          value={visibility}
+          onChange={(e) => setVisibility(e.target.value)}
+          className="p-2 border rounded"
+          required
+        >
+          <option value="private">Private</option>
+          <option value="family">Family</option>
+          <option value="public">Public</option>
+        </select>
+
+        {/* Submit */}
         <button type="submit" className="p-2 bg-black text-white rounded">
           Add Story
         </button>

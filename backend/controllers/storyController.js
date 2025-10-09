@@ -170,106 +170,61 @@ const { v4: uuidv4 } = require("uuid");
 
 const Story = require("../models/Story");
 const User = require("../models/user");
+const FamilyCircle = require("../models/familyCircle");
+const { Readable } = require("stream");
 const cloudinary = require("../configs/cloudinary");
+const Tesseract = require("tesseract.js");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
-const { transcribeIfNeeded } = require("../services/transcribe");
-const { generateSummaryAndTags, createEmbedding } = require("../services/ai");
-const vectorClient = require("../services/vectorClientLocal");
-
-/**
- * Helper to upload buffer to cloudinary using stream
- * (keeps your existing behavior)
- */
+// -------------------------
+// Helper: Upload Buffer to Cloudinary
+// -------------------------
 async function uploadBufferToCloudinary(buffer, options = {}) {
   return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(options, (err, result) => {
-      if (err) return reject(err);
-      resolve(result);
-    });
+    const uploadStream = cloudinary.uploader.upload_stream(
+      options,
+      (err, result) => {
+        if (err) return reject(err);
+        resolve(result);
+      }
+    );
     Readable.from(buffer).pipe(uploadStream);
   });
 }
 
-/**
- * Write multer memory buffer to temp file and return { path, cleanupFn }
- */
-async function writeBufferToTempFile(fileBuffer, originalName = null) {
-  if (!fileBuffer) return { path: null, cleanupFn: async () => {} };
-  const ext = originalName ? path.extname(originalName) : "";
-  const tempName = `ft-${uuidv4()}${ext || ".bin"}`;
-  const tempPath = path.join(os.tmpdir(), tempName);
-  await fs.promises.writeFile(tempPath, fileBuffer);
-  const cleanupFn = async () => {
-    try {
-      await fs.promises.unlink(tempPath);
-    } catch (e) {
-      // ignore
-    }
-  };
-  return { path: tempPath, cleanupFn };
-}
-
-/**
- * Try to upsert vector if vector client exposes an upsert function.
- * Gracefully logs and continues on failure.
- */
-async function safeUpsertVector(indexName, id, vector, metadata = {}) {
-  try {
-    if (!process.env.PINECONE_INDEX_NAME) return;
-    if (vectorClient && typeof vectorClient.upsertVector === "function") {
-      await vectorClient.upsertVector(indexName, id, vector, metadata);
-      console.log(`Vector upserted: ${id}`);
-    } else if (vectorClient && typeof vectorClient.upsert === "function") {
-      // older naming fallback
-      await vectorClient.upsert(indexName, id, vector, metadata);
-      console.log(`Vector upserted (fallback): ${id}`);
-    } else {
-      console.log("No upsertVector/upsert function found on vector client; skipping upsert.");
-    }
-  } catch (err) {
-    console.warn("Vector upsert failed:", err.message || err);
-  }
-}
-
-/**
- * Try to delete vector if vector client exposes a delete function.
- */
-async function safeDeleteVector(indexName, id) {
-  try {
-    if (!process.env.PINECONE_INDEX_NAME) return;
-    if (vectorClient && typeof vectorClient.deleteVector === "function") {
-      await vectorClient.deleteVector(indexName, id);
-      console.log(`Vector deleted: ${id}`);
-    } else if (vectorClient && typeof vectorClient.delete === "function") {
-      await vectorClient.delete(indexName, id);
-      console.log(`Vector deleted (fallback): ${id}`);
-    } else {
-      console.log("No deleteVector/delete function found on vector client; skipping deletion.");
-    }
-  } catch (err) {
-    console.warn("Vector deletion failed:", err.message || err);
-  }
-}
-
-/* ===========================
-   Existing controller logic (kept intact)
-   =========================== */
-
-//create story
+// -------------------------
+// Create Story
+// -------------------------
 const createStory = async (req, res) => {
   try {
-    const { title, content = "", tags = "", date, mediaType, userId } = req.body;
+    const {
+      title,
+      content = "",
+      tags = "",
+      date,
+      mediaType,
+      visibility = "private",
+      userId,
+    } = req.body;
+
     if (!title || !date || !userId)
-      return res.status(400).json({ success: false, error: "Missing required fields" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Missing required fields" });
 
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, error: "User not found" });
+    if (!user)
+      return res.status(404).json({ success: false, error: "User not found" });
 
-    let mediaUrl = "", publicId = "", cloudinaryResponse = null;
+    let mediaUrl = "",
+      publicId = "",
+      cloudinaryResponse = null;
+
     if (req.file && mediaType !== "text") {
       const uploadRes = await uploadBufferToCloudinary(req.file.buffer, {
         folder: "stories",
-        resource_type: "auto"
+        resource_type: "auto",
       });
       mediaUrl = uploadRes.secure_url;
       publicId = uploadRes.public_id;
@@ -280,12 +235,13 @@ const createStory = async (req, res) => {
       userId: user._id,
       title,
       content: mediaType === "text" ? content : "",
-      tags: tags ? tags.split(",").map(t => t.trim()) : [],
+      tags: tags ? tags.split(",").map((t) => t.trim()) : [],
       date,
       mediaType,
       mediaUrl,
       publicId,
-      cloudinaryResponse
+      cloudinaryResponse,
+      visibility,
     });
 
     const saved = await story.save();
@@ -367,10 +323,14 @@ const createStory = async (req, res) => {
   }
 };
 
-//get all stories
+// -------------------------
+// Get All Stories
+// -------------------------
 const getAllStories = async (req, res) => {
   try {
-    const stories = await Story.find().populate("userId", "name").sort({ createdAt: -1 });
+    const stories = await Story.find()
+      .populate("userId", "name")
+      .sort({ createdAt: -1 });
     res.json({ success: true, stories });
   } catch (err) {
     console.error(err);
@@ -378,11 +338,15 @@ const getAllStories = async (req, res) => {
   }
 };
 
-//get user's own stories
+// -------------------------
+// Get My Stories
+// -------------------------
 const getMyStories = async (req, res) => {
   try {
     const { userId } = req.params;
-    const stories = await Story.find({ userId }).populate("userId", "name").sort({ createdAt: -1 });
+    const stories = await Story.find({ userId })
+      .populate("userId", "name")
+      .sort({ createdAt: -1 });
     res.json({ success: true, stories });
   } catch (err) {
     console.error(err);
@@ -390,11 +354,15 @@ const getMyStories = async (req, res) => {
   }
 };
 
-//get all other users' stories excluding the given user
+// -------------------------
+// Get Other Users' Stories
+// -------------------------
 const getOthersStories = async (req, res) => {
   try {
     const { userId } = req.params;
-    const stories = await Story.find({ userId: { $ne: userId } }).populate("userId", "name").sort({ createdAt: -1 });
+    const stories = await Story.find({ userId: { $ne: userId } })
+      .populate("userId", "name")
+      .sort({ createdAt: -1 });
     res.json({ success: true, stories });
   } catch (err) {
     console.error(err);
@@ -402,12 +370,120 @@ const getOthersStories = async (req, res) => {
   }
 };
 
-//get story by id
+// -------------------------
+// Get Story by ID (includes AI + OCR + visibility check)
+// -------------------------
 const getStoryById = async (req, res) => {
   try {
     const { id } = req.params;
-    const story = await Story.findById(id).populate("userId", "name");
-    if (!story) return res.status(404).json({ success: false, message: "Story not found" });
+    const viewerId = req.user ? req.user._id : null;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid story ID" });
+    }
+
+    const story = await Story.findById(id).populate("userId", "name username");
+    if (!story)
+      return res
+        .status(404)
+        .json({ success: false, message: "Story not found" });
+
+    // Check visibility
+    let canView = false;
+    if (story.visibility === "public") {
+      canView = true;
+    } else if (story.visibility === "private") {
+      canView =
+        viewerId && story.userId._id.toString() === viewerId.toString();
+    } else if (story.visibility === "family" && viewerId) {
+      const userCircles = await FamilyCircle.find({
+        $or: [{ createdBy: viewerId }, { "members.user": viewerId }],
+        isActive: true,
+      });
+      const creatorCircles = await FamilyCircle.find({
+        $or: [
+          { createdBy: story.userId._id },
+          { "members.user": story.userId._id },
+        ],
+        isActive: true,
+      });
+      const sharedCircles = userCircles.filter((userCircle) =>
+        creatorCircles.some(
+          (creatorCircle) =>
+            creatorCircle._id.toString() === userCircle._id.toString()
+        )
+      );
+      canView = sharedCircles.length > 0;
+    }
+
+    if (!canView)
+      return res
+        .status(403)
+        .json({ success: false, error: "You don't have permission to view this story" });
+
+    let contentToAnalyze = story.content || "";
+
+    // Extract text from image
+    if (story.mediaType === "photo" && story.mediaUrl) {
+      try {
+        const {
+          data: { text },
+        } = await Tesseract.recognize(story.mediaUrl, "eng");
+        contentToAnalyze = text;
+      } catch (ocrErr) {
+        console.error("OCR error:", ocrErr);
+      }
+    }
+
+    // Generate AI analysis if not exists
+    if (
+      (!story.aiAnalysis ||
+        !story.aiAnalysis.tags?.length ||
+        !story.aiAnalysis.summary) &&
+      contentToAnalyze
+    ) {
+      const prompt = `
+        Analyze this story and return JSON:
+        {"tags":["..."],"summary":"...","category":""}
+        Title: ${story.title}
+        Content: ${contentToAnalyze}
+      `;
+
+      try {
+        const aiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+          }
+        );
+
+        const aiData = await aiRes.json();
+        let text = aiData?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        text = text.replace(/```json|```/g, "").trim();
+
+        let json;
+        try {
+          json = JSON.parse(text);
+        } catch {
+          json = { tags: [], summary: "", category: "Uncategorized" };
+        }
+
+        story.aiAnalysis = {
+          tags: json.tags || [],
+          summary: json.summary || "",
+          category: json.category || "Uncategorized",
+        };
+
+        await story.save();
+      } catch (aiErr) {
+        console.error("AI error:", aiErr);
+      }
+    }
+
     res.json({ success: true, story });
   } catch (err) {
     console.error(err);
@@ -415,21 +491,27 @@ const getStoryById = async (req, res) => {
   }
 };
 
-//update story
+// -------------------------
+// Update Story
+// -------------------------
 const updateStory = async (req, res) => {
   try {
     const { id } = req.params;
-    //console.log(req.body);
-    const { title, content = "", tags = "", mediaType, date } = req.body;
+    const { title, content = "", tags = "", mediaType, date, visibility } =
+      req.body;
 
     const story = await Story.findById(id);
-    if (!story) return res.status(404).json({ success: false, message: "Story not found" });
+    if (!story)
+      return res
+        .status(404)
+        .json({ success: false, message: "Story not found" });
 
     story.title = title || story.title;
     story.content = mediaType === "text" ? content : story.content;
-    story.tags = tags ? tags.split(",").map(t => t.trim()) : story.tags;
+    story.tags = tags ? tags.split(",").map((t) => t.trim()) : story.tags;
     story.date = date || story.date;
     story.mediaType = mediaType || story.mediaType;
+    story.visibility = visibility || story.visibility;
 
     if (req.file && mediaType !== "text") {
       const uploadRes = await uploadBufferToCloudinary(req.file.buffer, {
@@ -511,23 +593,17 @@ const updateStory = async (req, res) => {
   }
 };
 
-
-//delete story
+// -------------------------
+// Delete Story
+// -------------------------
 const deleteStory = async (req, res) => {
   try {
     const { id } = req.params;
     const story = await Story.findByIdAndDelete(id);
-    if (!story) return res.status(404).json({ success: false, message: "Story not found" });
-
-    // attempt to delete vector from vector DB if embeddingId present
-    try {
-      if (story.embeddingId && process.env.PINECONE_INDEX_NAME) {
-        await safeDeleteVector(process.env.PINECONE_INDEX_NAME, story.embeddingId);
-      }
-    } catch (vecErr) {
-      console.warn("Failed to delete vector during story deletion:", vecErr.message || vecErr);
-    }
-
+    if (!story)
+      return res
+        .status(404)
+        .json({ success: false, message: "Story not found" });
     res.json({ success: true, message: "Story deleted successfully" });
   } catch (err) {
     console.error(err);
@@ -535,6 +611,90 @@ const deleteStory = async (req, res) => {
   }
 };
 
+// -------------------------
+// Feed Routes
+// -------------------------
+
+// Feed: get stories (public, private, family)
+const getFeedStories = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const userCircles = await FamilyCircle.find({
+      $or: [{ createdBy: userId }, { "members.user": userId }],
+      isActive: true,
+    }).select("_id members createdBy");
+
+    const circleMemberIds = userCircles.flatMap((circle) => [
+      circle.createdBy,
+      ...circle.members.map((member) => member.user),
+    ]);
+
+    const visibilityQuery = {
+      $or: [
+        { visibility: "public" },
+        { visibility: "private", userId },
+        {
+          visibility: "family",
+          $or: [{ userId }, { userId: { $in: circleMemberIds } }],
+        },
+      ],
+    };
+
+    const stories = await Story.find(visibilityQuery)
+      .populate("userId", "name username")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, stories });
+  } catch (err) {
+    console.error("Error fetching feed stories:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// Public stories
+const getPublicStories = async (req, res) => {
+  try {
+    const stories = await Story.find({ visibility: "public" })
+      .populate("userId", "name username")
+      .sort({ createdAt: -1 });
+    res.json({ success: true, stories });
+  } catch (err) {
+    console.error("Error fetching public stories:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// Family stories
+const getFamilyStories = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const userCircles = await FamilyCircle.find({
+      $or: [{ createdBy: userId }, { "members.user": userId }],
+      isActive: true,
+    }).populate("members.user", "name email");
+
+    const circleMemberIds = userCircles.flatMap((circle) => [
+      circle.createdBy,
+      ...circle.members.map((member) => member.user._id || member.user),
+    ]);
+
+    const stories = await Story.find({
+      visibility: "family",
+      $or: [{ userId }, { userId: { $in: circleMemberIds } }],
+    })
+      .populate("userId", "name username")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, stories });
+  } catch (err) {
+    console.error("Error fetching family stories:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// -------------------------
 module.exports = {
   createStory,
   getAllStories,
@@ -542,7 +702,10 @@ module.exports = {
   getOthersStories,
   getStoryById,
   updateStory,
-  deleteStory
+  deleteStory,
+  getFeedStories,
+  getPublicStories,
+  getFamilyStories,
 };
 
 

@@ -8,11 +8,20 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import BackButton from "./components/Back";
 import Profile from "./pages/Profile";
+import Dashboard from "./pages/Dashboard";
+import Stories from "./pages/Stories";
+import FamilyCircles from "./pages/FamilyCircles";
+import FeedPage from "./pages/FeedPage";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import PromptsPage from "./pages/PromptsPage"; 
 import MatchesPage from "./pages/MatchesPage";
 
+import FamilyRoom from "./pages/FamilyRoom";
+import PromptsPage from "./pages/PromptsPage";
+import CalendarPage from "./pages/Calendar";
+import StoryReport from "./pages/StoryReport";
+import StoriesByCategory from "./pages/StoriesByCategory";
 
 function ProtectedRoute({ user, children }) {
   if (!user) {
@@ -81,6 +90,45 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute user={user}>
+              <Dashboard user={user} setUser={setUser} />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Stories Management */}
+        <Route
+          path="/stories"
+          element={
+            <ProtectedRoute user={user}>
+              <Stories user={user} />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Family Circles */}
+        <Route
+          path="/circles"
+          element={
+            <ProtectedRoute user={user}>
+              <FamilyCircles user={user} />
+            </ProtectedRoute>
+          }
+        />
+<Route
+  path="/familyroom"
+  element={
+    <ProtectedRoute user={user}>
+      <FamilyRoom user={user} />
+    </ProtectedRoute>
+  }
+/>
+
+        <Route path="/feed" element={<ProtectedRoute user={user}><FeedPage user={user} /> </ProtectedRoute>} />
+
 
         <Route
           path="/stories/view/:id"
@@ -90,11 +138,38 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/stories/edit/:id"
           element={
             <ProtectedRoute user={user}>
               <EditStory user={user} />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/stories/ai/:id"
+          element={
+            <ProtectedRoute user={user}>
+              <StoryReport user={user} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stories/categories"
+          element={
+            <ProtectedRoute user={user}>
+              <StoriesByCategory user={user} />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/calendar"
+          element={
+            <ProtectedRoute user={user}>
+              <CalendarPage user={user} />
             </ProtectedRoute>
           }
         />

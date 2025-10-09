@@ -113,24 +113,31 @@ const updateBirthYear = async (req, res) => {
 const updatePassword = async (req, res) => {
   try {
     const { newPassword } = req.body;
+
     if (!newPassword) {
       return res.status(400).json({ message: 'New password is required' });
     }
     if (newPassword.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
+
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    user.password = newPassword; // model pre 'save' will hash it
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
     await user.save();
+
     res.json({ message: 'Password updated successfully' });
   } catch (error) {
     console.error('updatePassword error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 module.exports = {
   getProfile,

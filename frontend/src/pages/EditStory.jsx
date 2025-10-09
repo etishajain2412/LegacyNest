@@ -20,15 +20,17 @@ export default function EditStory({ user }) {
       try {
         const res = await fetch(`http://localhost:5000/api/stories/${id}`);
         const data = await res.json();
-        console.log(data);
+        //console.log("EDIT FETCH data:");
+        //console.log(data);
         if (data.success) {
           const s = data.story;
           setStory(s);
           setTitle(s.title);
           setContent(s.content);
-          setTags(s.tags.join(", "));
           setDate(new Date(s.date).toISOString().split("T")[0]);
           setMediaType(s.mediaType);
+          setTags((s.aiAnalysis?.tags || []).join(", "));
+
         } else {
           alert("Story not found");
           navigate("/timeline");
@@ -53,11 +55,14 @@ export default function EditStory({ user }) {
       const formData = new FormData();
       formData.append("title", title);
       formData.append("content", content);
-      formData.append("tags", tags.split(",").map(t => t.trim()));
+      //formData.append("tags", tags.split(",").map(t => t.trim()));
       formData.append("date", date);
       formData.append("mediaType", mediaType);
       if (file) formData.append("file", file);
-
+      formData.append(
+      "aiAnalysis[tags]",
+      JSON.stringify(tags.split(",").map(t => t.trim()))
+      );
       const res = await fetch(`http://localhost:5000/api/stories/${id}`, {
         method: "PUT",
         body: formData,
@@ -127,8 +132,8 @@ export default function EditStory({ user }) {
                 mediaType === "photo"
                   ? "image/*"
                   : mediaType === "video"
-                  ? "video/*"
-                  : "audio/*"
+                    ? "video/*"
+                    : "audio/*"
               }
               onChange={(e) => setFile(e.target.files[0])}
               className="hidden"

@@ -110,8 +110,7 @@ const { Server } = require('socket.io');
 const http = require('http');
 const jwt = require('jsonwebtoken');
 
-const { setIo, register, unregisterBySocket } = require('./utils/socketManager');
-const { startPromptWorker } = require('./worker/promptWorker');
+
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -120,6 +119,18 @@ const profileRoutes = require('./routes/profileRoutes.js');
 const promptRoutes = require('./routes/promptRoutes');
 const matchRoutes = require('./routes/matchRoutes'); 
 const sharedPromptRoutes = require('./routes/sharedPromptRoutes');
+
+
+const { setIo, register, unregisterBySocket } = require("./utils/socketManager");
+const { startPromptWorker } = require("./worker/promptWorker"); 
+
+// Import routes
+const authRoutes = require("./routes/authRoutes");
+const storyRoutes = require("./routes/storyRoutes");
+const profileRoutes = require("./routes/profileRoutes");
+const familyCircleRoutes = require("./routes/familyCircleRoutes");
+const promptRoutes = require('./routes/promptRoutes');
+const calendarRoutes = require("./routes/calendarRoutes");
 
 dotenv.config();
 connectDB();
@@ -130,88 +141,103 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(passport.initialize());
 
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
-app.use(
-  cors({
-    origin: CLIENT_URL,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-  })
-);
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+}));
 
-// Root route (for testing)
-app.get('/', (req, res) => {
-  res.send('🚀 Backend server is running with Local Embeddings!');
-});
-
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/profile', profileRoutes);
-app.use('/api/stories', storyRoutes);
-app.use('/api/prompts', promptRoutes);
-app.use('/api/matches', matchRoutes); //  Cross-generational matching
-app.use('/api/shared-prompts', sharedPromptRoutes);
-
-
-// --- Create HTTP server and Socket.IO instance
+// 📦 Create HTTP server
 const server = http.createServer(app);
+
+// ⚡ Attach Socket.IO to server
 const io = new Server(server, {
   cors: {
-    origin: CLIENT_URL,
+    origin: 'http://localhost:3000',
     methods: ['GET', 'POST'],
-  },
+    credentials: true
+  }
 });
-setIo(io);
 
-// Socket.IO connection handler
-io.on('connection', (socket) => {
-  console.log('socket connected', socket.id);
+setIo(io); // optional if you're using a shared instance via socketManager
 
-  // JWT auth
-  socket.on('auth', (data) => {
+// ✅ Socket.IO logic
+io.on("connection", (socket) => {
+  console.log("🟢 Socket connected:", socket.id);
+
+  socket.on("auth", (data) => {
     try {
-      const token = data?.token?.replace('Bearer ', '') || null;
+      const token = data?.token?.replace("Bearer ", "");
       if (!token) return;
       const payload = jwt.verify(token, process.env.JWT_SECRET);
       if (payload && payload.id) {
         register(payload.id, socket.id);
-        console.log('socket registered user', payload.id, '->', socket.id);
+        console.log("✅ Socket registered:", payload.id, "->", socket.id);
       }
     } catch (err) {
-      console.warn('socket auth failed', err?.message || err);
+      console.warn("❌ Socket auth failed:", err.message);
     }
   });
 
-  // Simple register by userId (fallback)
-  socket.on('register', (data) => {
+  socket.on("register", (data) => {
     const { userId } = data || {};
     if (userId) {
       register(userId, socket.id);
-      console.log('socket registered via register event', userId, '->', socket.id);
+      console.log("✅ Registered via 'register' event:", userId, "->", socket.id);
     }
   });
 
-  socket.on('disconnect', () => {
-    console.log('socket disconnected', socket.id);
+  // Custom room & editing events
+  socket.on("joinFamilyCircle", ({ familyCircleId, userId, userName }) => {
+    socket.join(familyCircleId);
+    console.log(`👥 ${userName} joined circle ${familyCircleId}`);
+    io.to(familyCircleId).emit("circleNotification", {
+      type: "join",
+      message: `${userName} joined the room.`,
+    });
+  });
+
+  socket.on("startEditingStory", ({ familyCircleId, storyTitle, userName }) => {
+    socket.to(familyCircleId).emit("circleNotification", {
+      type: "edit",
+      message: `${userName} is editing "${storyTitle}"`,
+    });
+  });
+
+  socket.on("stopEditingStory", ({ familyCircleId, storyTitle, userName }) => {
+    socket.to(familyCircleId).emit("circleNotification", {
+      type: "edit-stop",
+      message: `${userName} stopped editing "${storyTitle}"`,
+    });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("🔴 Socket disconnected:", socket.id);
     unregisterBySocket(socket.id);
   });
 });
 
-// Start prompt worker (background process)
+// 🧩 Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/stories", storyRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/circles", familyCircleRoutes);
+app.use("/api/prompts", promptRoutes);
+app.use("/api/calendar", calendarRoutes);
+app.use('/api/matches', matchRoutes); 
+app.use('/api/shared-prompts', sharedPromptRoutes);
+
+
+// 👋 Root
+app.get("/", (req, res) => {
+  res.send("🚀 Family Story App Backend is running!");
+});
+
+// 🧠 Start background worker
 startPromptWorker();
 
-// Handle uncaught errors for safety
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception thrown:', err);
-});
-
-// ✅ Start the server
+// ✅ Start server (this is crucial)
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log('🧠 Using local embeddings and vector search (no Pinecone required).');
+  console.log(`✅ Server running at http://localhost:${PORT}`);
 });

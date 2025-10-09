@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axiosInstance from "../utils/axiosInstance";
 import Cookies from "js-cookie";
+import { Loader2, Edit3, Lock, Save, XCircle } from "lucide-react";
 
 const Profile = ({ user, setUser }) => {
   const [editName, setEditName] = useState(false);
@@ -105,19 +106,19 @@ const Profile = ({ user, setUser }) => {
 
   return (
     <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-4xl mx-auto px-4 ">
         {message && (
-          <div className="bg-green-100 text-green-700 px-4 py-2 rounded mb-4">
+          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6 text-center font-medium">
             {message}
           </div>
         )}
         {error && (
-          <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4">
+          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6 text-center font-medium">
             {error}
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md p-6 border-1">
+        <div className="bg-white rounded-lg shadow-md p-6 border-1 border-2 border-black">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-serif font-semibold">Profile</h1>
           </div>
@@ -146,7 +147,7 @@ const Profile = ({ user, setUser }) => {
                     Account Settings
                   </h3>
 
-                  <div className="bg-gray-50 p-4 rounded-lg border-1">
+                  <div className="bg-gray-50 p-4 rounded-lg border-1 border-2 border-black">
                     {!editName ? (
                       <div className="flex justify-between items-center ">
                         <div>

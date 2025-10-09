@@ -15,8 +15,8 @@ const NotificationBell = () => {
   }, []);
 
   return (
-    <button className="relative p-2">
-      🔔
+    <button className="relative p-2 border-2  border-black rounded">
+      Notification 🔔
       {count > 0 && (
         <span className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full px-2 text-xs">
           {count}
