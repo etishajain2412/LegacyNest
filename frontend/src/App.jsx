@@ -10,10 +10,10 @@ import BackButton from "./components/Back";
 import Profile from "./pages/Profile";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
-import PromptsPage from "./pages/PromptsPage"; 
+import PromptsPage from "./pages/PromptsPage";
 import CalendarPage from "./pages/Calendar";
 import StoryReport from "./pages/StoryReport";
-
+import StoriesByCategory from "./pages/StoriesByCategory";
 
 function ProtectedRoute({ user, children }) {
   if (!user) {
@@ -85,7 +85,15 @@ export default function App() {
 
 
 
-        
+        <Route
+          path="/stories/view/:id"
+          element={
+            <ProtectedRoute user={user}>
+              <ViewStory user={user} />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/stories/edit/:id"
           element={
@@ -103,7 +111,15 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        
+        <Route
+          path="/stories/categories"
+          element={
+            <ProtectedRoute user={user}>
+              <StoriesByCategory user={user} />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/calendar"
           element={

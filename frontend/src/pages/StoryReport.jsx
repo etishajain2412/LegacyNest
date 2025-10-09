@@ -13,7 +13,7 @@ export default function StoryReport() {
                 setLoading(true);
                 const res = await fetch(`http://localhost:5000/api/stories/${id}`);
                 const data = await res.json();
-                console.log("Fetch data:", data);
+                //console.log("Fetch data:", data);
                 if (data.success) setStory(data.story);
 
                 else {

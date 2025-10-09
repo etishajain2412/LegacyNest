@@ -181,17 +181,15 @@ export default function Timeline({ user }) {
 
       <div className="mb-6 mt-11 flex gap-4">
         <button
-          className={`px-4 py-2 rounded ${
-            view === "mine" ? "bg-gray-900 text-white" : "bg-gray-200"
-          }`}
+          className={`px-4 py-2 rounded ${view === "mine" ? "bg-gray-900 text-white" : "bg-gray-200"
+            }`}
           onClick={() => setView("mine")}
         >
           My Timeline
         </button>
         <button
-          className={`px-4 py-2 rounded ${
-            view === "family" ? "bg-gray-900 text-white" : "bg-gray-200"
-          }`}
+          className={`px-4 py-2 rounded ${view === "family" ? "bg-gray-900 text-white" : "bg-gray-200"
+            }`}
           onClick={() => setView("family")}
         >
           Family Timeline
@@ -292,11 +290,12 @@ export default function Timeline({ user }) {
                         <source src={story.mediaUrl} type="audio/mpeg" />
                       </audio>
                     )}
-                    {story.tags?.length > 0 && (
+                    {story.aiAnalysis?.tags?.length > 0 && (
                       <p className="mt-2 text-sm text-gray-600">
-                        Tags: {story.tags.join(", ")}
+                        Tags: {story.aiAnalysis.tags.join(", ")}
                       </p>
                     )}
+
 
                     <div className="flex justify-end mt-4">
                       <button

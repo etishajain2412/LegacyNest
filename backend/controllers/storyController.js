@@ -2,6 +2,7 @@ const Story = require("../models/Story");
 const User = require("../models/user");
 const { Readable } = require("stream");
 const cloudinary = require("../configs/cloudinary");
+const Tesseract = require("tesseract.js");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
@@ -124,6 +125,7 @@ const getOthersStories = async (req, res) => {
 //     res.status(500).json({ success: false, message: "Server error" });
 //   }
 // };
+
 const getStoryById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -135,36 +137,31 @@ const getStoryById = async (req, res) => {
     const story = await Story.findById(id).populate("userId", "name");
 
     if (!story)
-      return res
-        .status(404)
-        .json({ success: false, message: "Story not found" });
+      return res.status(404).json({ success: false, message: "Story not found" });
 
-    if (
-      story.mediaType === "text" &&
-      (!story.aiAnalysis ||
-        !story.aiAnalysis.tags.length ||
-        !story.aiAnalysis.summary)
-    ) {
+    let contentToAnalyze = story.content || "";
+
+    // If mediaType is photo, extract text
+    if (story.mediaType === "photo" && story.mediaUrl) {
+      try {
+        const { data: { text } } = await Tesseract.recognize(story.mediaUrl, "eng", {
+          //logger: (m) => console.log(m), // optional progress logging
+        });
+        contentToAnalyze = text;
+      } catch (ocrErr) {
+        console.error("OCR error:", ocrErr);
+      }
+    }
+
+    // If AI analysis doesn't exist or incomplete
+    if ((!story.aiAnalysis || !story.aiAnalysis.tags.length || !story.aiAnalysis.summary) && contentToAnalyze) {
       const prompt = `
         You are an AI assistant that analyzes a short personal story. 
         Analyze this story and return JSON:
         {"tags":["..."],"summary":"...","category":""}
         Title: ${story.title}
-        Content: ${story.content}
+        Content: ${contentToAnalyze}
       `;
-    //   const prompt = `
-    //       You are an assistant that analyzes a story. 
-    //       Read the story and provide the following in JSON format:
-
-    //       1. "summary" - a short, simple, easy-to-understand summary in 2-3 lines.
-    //       2. "tags" - 3-5 keywords that describe the story.
-    //       3. "category" - one short category like "Adventure", "Romance", "Tech", etc.
-
-    //       Return ONLY valid JSON, no extra text.
-
-    //       Story Title: "${story.title}"
-    //       Story Content: "${story.content}"
-    // `;
 
       try {
         const aiRes = await fetch(
@@ -177,16 +174,13 @@ const getStoryById = async (req, res) => {
         );
 
         const aiData = await aiRes.json();
-        console.log("AI response:", aiData);
-
         let text = aiData?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        text = text.replace(/```json|```/g, "").trim(); // clean code block markers
+        text = text.replace(/```json|```/g, "").trim();
 
         let json;
         try {
           json = JSON.parse(text);
-        } catch (parseErr) {
-          console.error("Error parsing AI response:", parseErr);
+        } catch {
           json = { tags: [], summary: "", category: "Uncategorized" };
         }
 
@@ -198,7 +192,7 @@ const getStoryById = async (req, res) => {
 
         await story.save();
       } catch (aiErr) {
-        console.error("Error calling AI API:", aiErr);
+        console.error("AI error:", aiErr);
       }
     }
 
@@ -208,6 +202,7 @@ const getStoryById = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 //update story
 const updateStory = async (req, res) => {
