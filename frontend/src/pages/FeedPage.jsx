@@ -11,35 +11,68 @@ const FeedPage = ({ user }) => {
   const [filter, setFilter] = useState("all");
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Load feed when user or filter changes
   useEffect(() => {
     if (user?.id) {
       fetchFeedStories();
     }
   }, [user, filter]);
 
+  // Set filter from URL on mount
   useEffect(() => {
     const urlFilter = searchParams.get("filter");
-    if (urlFilter && ["all", "public", "family", "private"].includes(urlFilter)) {
+    if (urlFilter && ["all", "public", "family"].includes(urlFilter)) {
       setFilter(urlFilter);
     }
   }, [searchParams]);
 
+  // -------------------------
+  // Fetch stories by filter
+  // -------------------------
   const fetchFeedStories = async () => {
     setLoading(true);
     try {
       const token = Cookies.get("accessToken");
-      const endpoint = filter === "all" ? "/stories/feed" : `/stories/${filter}`;
+
+      // Map filters to backend routes
+      const endpoints = {
+        all: "/stories/feed/all",
+        public: "/stories/feed/public",
+        family: "/stories/feed/family",
+      };
+
+      const endpoint = endpoints[filter] || endpoints.all;
+
       const { data } = await axiosInstance.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       setStories(data.stories || []);
-      setStats(data.stats || null);
+
+      // Optional: compute basic stats from returned stories
+      const computedStats = computeStats(data.stories || []);
+      setStats(computedStats);
     } catch (error) {
       console.error("Error fetching feed stories:", error);
       setStories([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // -------------------------
+  // Compute stats locally
+  // -------------------------
+  const computeStats = (stories) => {
+    const publicCount = stories.filter((s) => s.visibility === "public").length;
+    const familyCount = stories.filter((s) => s.visibility === "family").length;
+    const privateCount = stories.filter((s) => s.visibility === "private").length;
+    return {
+      public: publicCount,
+      family: familyCount,
+      private: privateCount,
+      total: stories.length,
+    };
   };
 
   const handleFilterChange = (newFilter) => {
@@ -61,16 +94,7 @@ const FeedPage = ({ user }) => {
   };
 
   const getVisibilityColor = (visibility) => {
-    switch (visibility) {
-      case "public":
-        return "bg-gray-100 text-gray-900 border-gray-300";
-      case "family":
-        return "bg-gray-100 text-gray-900 border-gray-300";
-      case "private":
-        return "bg-gray-100 text-gray-900 border-gray-300";
-      default:
-        return "bg-gray-100 text-gray-900 border-gray-300";
-    }
+    return "bg-gray-100 text-gray-900 border-gray-300";
   };
 
   return (
@@ -253,24 +277,6 @@ const FeedPage = ({ user }) => {
                         day: "numeric",
                       })}
                     </p>
-
-                    {story.sharedCircles && story.sharedCircles.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-xs text-gray-500 mb-1">
-                          Shared in family circles:
-                        </p>
-                        <div className="flex flex-wrap gap-1">
-                          {story.sharedCircles.map((circle) => (
-                            <span
-                              key={circle._id}
-                              className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded border border-gray-300"
-                            >
-                              {circle.name}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   {story.mediaUrl && (

@@ -7,23 +7,40 @@ export default function StoriesByCategory() {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    async function fetchStories() {
-      try {
-        setLoading(true);
-        const res = await fetch("http://localhost:5000/api/stories");
-        const data = await res.json();
-        if (data.success) setStories(data.stories);
-        else alert("Failed to fetch stories");
-      } catch (err) {
-        console.error(err);
-        alert("Error fetching stories");
-      } finally {
-        setLoading(false);
+useEffect(() => {
+  async function fetchStories() {
+    try {
+      setLoading(true);
+
+      const token = localStorage.getItem("token");
+
+      const res = await fetch("http://localhost:5000/api/stories", {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`, // 🛡️ Send token
+        },
+        credentials: "include", // optional: use if backend needs cookies too
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Failed to fetch stories");
       }
+
+      const data = await res.json();
+      if (data.success) setStories(data.stories);
+      else alert("Failed to fetch stories");
+    } catch (err) {
+      console.error(err);
+      alert("Error fetching stories");
+    } finally {
+      setLoading(false);
     }
-    fetchStories();
-  }, []);
+  }
+
+  fetchStories();
+}, []);
+
 
   // Group by category
   const categorizedStories = stories.reduce((acc, story) => {

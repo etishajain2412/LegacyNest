@@ -87,7 +87,10 @@ export default function Timeline({ user }) {
             ? `http://localhost:5000/api/stories/mine/${user.id}`
             : `http://localhost:5000/api/stories/`;
 
-        const res = await fetch(url);
+        const res = await fetch(url, {
+           credentials: 'include',
+        });
+
         const data = await res.json();
 
         if (data.success) {
@@ -113,6 +116,7 @@ export default function Timeline({ user }) {
     try {
       const res = await fetch(`http://localhost:5000/api/stories/${id}`, {
         method: "DELETE",
+        credentials: 'include',
       });
       const data = await res.json();
 

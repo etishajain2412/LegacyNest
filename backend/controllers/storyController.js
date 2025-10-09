@@ -1,11 +1,15 @@
 const Story = require("../models/Story");
 const User = require("../models/user");
+const FamilyCircle = require("../models/familyCircle");
 const { Readable } = require("stream");
 const cloudinary = require("../configs/cloudinary");
 const Tesseract = require("tesseract.js");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
+// -------------------------
+// Helper: Upload Buffer to Cloudinary
+// -------------------------
 async function uploadBufferToCloudinary(buffer, options = {}) {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
@@ -19,7 +23,9 @@ async function uploadBufferToCloudinary(buffer, options = {}) {
   });
 }
 
-//create story
+// -------------------------
+// Create Story
+// -------------------------
 const createStory = async (req, res) => {
   try {
     const {
@@ -28,8 +34,10 @@ const createStory = async (req, res) => {
       tags = "",
       date,
       mediaType,
+      visibility = "private",
       userId,
     } = req.body;
+
     if (!title || !date || !userId)
       return res
         .status(400)
@@ -42,6 +50,7 @@ const createStory = async (req, res) => {
     let mediaUrl = "",
       publicId = "",
       cloudinaryResponse = null;
+
     if (req.file && mediaType !== "text") {
       const uploadRes = await uploadBufferToCloudinary(req.file.buffer, {
         folder: "stories",
@@ -62,6 +71,7 @@ const createStory = async (req, res) => {
       mediaUrl,
       publicId,
       cloudinaryResponse,
+      visibility,
     });
 
     const saved = await story.save();
@@ -72,7 +82,9 @@ const createStory = async (req, res) => {
   }
 };
 
-//get all stories
+// -------------------------
+// Get All Stories
+// -------------------------
 const getAllStories = async (req, res) => {
   try {
     const stories = await Story.find()
@@ -85,7 +97,9 @@ const getAllStories = async (req, res) => {
   }
 };
 
-//get user's own stories
+// -------------------------
+// Get My Stories
+// -------------------------
 const getMyStories = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -99,7 +113,9 @@ const getMyStories = async (req, res) => {
   }
 };
 
-//get all other users' stories excluding the given user
+// -------------------------
+// Get Other Users' Stories
+// -------------------------
 const getOthersStories = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -113,50 +129,81 @@ const getOthersStories = async (req, res) => {
   }
 };
 
-//get story by id
-// const getStoryById = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const story = await Story.findById(id).populate("userId", "name");
-//     if (!story) return res.status(404).json({ success: false, message: "Story not found" });
-//     res.json({ success: true, story });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ success: false, message: "Server error" });
-//   }
-// };
-
+// -------------------------
+// Get Story by ID (includes AI + OCR + visibility check)
+// -------------------------
 const getStoryById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+    const viewerId = req.user ? req.user._id : null;
+
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, message: "Invalid story ID" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid story ID" });
     }
 
-    const story = await Story.findById(id).populate("userId", "name");
-
+    const story = await Story.findById(id).populate("userId", "name username");
     if (!story)
-      return res.status(404).json({ success: false, message: "Story not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Story not found" });
+
+    // Check visibility
+    let canView = false;
+    if (story.visibility === "public") {
+      canView = true;
+    } else if (story.visibility === "private") {
+      canView =
+        viewerId && story.userId._id.toString() === viewerId.toString();
+    } else if (story.visibility === "family" && viewerId) {
+      const userCircles = await FamilyCircle.find({
+        $or: [{ createdBy: viewerId }, { "members.user": viewerId }],
+        isActive: true,
+      });
+      const creatorCircles = await FamilyCircle.find({
+        $or: [
+          { createdBy: story.userId._id },
+          { "members.user": story.userId._id },
+        ],
+        isActive: true,
+      });
+      const sharedCircles = userCircles.filter((userCircle) =>
+        creatorCircles.some(
+          (creatorCircle) =>
+            creatorCircle._id.toString() === userCircle._id.toString()
+        )
+      );
+      canView = sharedCircles.length > 0;
+    }
+
+    if (!canView)
+      return res
+        .status(403)
+        .json({ success: false, error: "You don't have permission to view this story" });
 
     let contentToAnalyze = story.content || "";
 
-    // If mediaType is photo, extract text
+    // Extract text from image
     if (story.mediaType === "photo" && story.mediaUrl) {
       try {
-        const { data: { text } } = await Tesseract.recognize(story.mediaUrl, "eng", {
-          //logger: (m) => console.log(m), // optional progress logging
-        });
+        const {
+          data: { text },
+        } = await Tesseract.recognize(story.mediaUrl, "eng");
         contentToAnalyze = text;
       } catch (ocrErr) {
         console.error("OCR error:", ocrErr);
       }
     }
 
-    // If AI analysis doesn't exist or incomplete
-    if ((!story.aiAnalysis || !story.aiAnalysis.tags.length || !story.aiAnalysis.summary) && contentToAnalyze) {
+    // Generate AI analysis if not exists
+    if (
+      (!story.aiAnalysis ||
+        !story.aiAnalysis.tags?.length ||
+        !story.aiAnalysis.summary) &&
+      contentToAnalyze
+    ) {
       const prompt = `
-        You are an AI assistant that analyzes a short personal story. 
         Analyze this story and return JSON:
         {"tags":["..."],"summary":"...","category":""}
         Title: ${story.title}
@@ -203,13 +250,14 @@ const getStoryById = async (req, res) => {
   }
 };
 
-
-//update story
+// -------------------------
+// Update Story
+// -------------------------
 const updateStory = async (req, res) => {
   try {
     const { id } = req.params;
-    //console.log(req.body);
-    const { title, content = "", tags = "", mediaType, date } = req.body;
+    const { title, content = "", tags = "", mediaType, date, visibility } =
+      req.body;
 
     const story = await Story.findById(id);
     if (!story)
@@ -222,6 +270,7 @@ const updateStory = async (req, res) => {
     story.tags = tags ? tags.split(",").map((t) => t.trim()) : story.tags;
     story.date = date || story.date;
     story.mediaType = mediaType || story.mediaType;
+    story.visibility = visibility || story.visibility;
 
     if (req.file && mediaType !== "text") {
       const uploadRes = await uploadBufferToCloudinary(req.file.buffer, {
@@ -241,7 +290,9 @@ const updateStory = async (req, res) => {
   }
 };
 
-//delete story
+// -------------------------
+// Delete Story
+// -------------------------
 const deleteStory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -257,6 +308,90 @@ const deleteStory = async (req, res) => {
   }
 };
 
+// -------------------------
+// Feed Routes
+// -------------------------
+
+// Feed: get stories (public, private, family)
+const getFeedStories = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const userCircles = await FamilyCircle.find({
+      $or: [{ createdBy: userId }, { "members.user": userId }],
+      isActive: true,
+    }).select("_id members createdBy");
+
+    const circleMemberIds = userCircles.flatMap((circle) => [
+      circle.createdBy,
+      ...circle.members.map((member) => member.user),
+    ]);
+
+    const visibilityQuery = {
+      $or: [
+        { visibility: "public" },
+        { visibility: "private", userId },
+        {
+          visibility: "family",
+          $or: [{ userId }, { userId: { $in: circleMemberIds } }],
+        },
+      ],
+    };
+
+    const stories = await Story.find(visibilityQuery)
+      .populate("userId", "name username")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, stories });
+  } catch (err) {
+    console.error("Error fetching feed stories:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// Public stories
+const getPublicStories = async (req, res) => {
+  try {
+    const stories = await Story.find({ visibility: "public" })
+      .populate("userId", "name username")
+      .sort({ createdAt: -1 });
+    res.json({ success: true, stories });
+  } catch (err) {
+    console.error("Error fetching public stories:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// Family stories
+const getFamilyStories = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const userCircles = await FamilyCircle.find({
+      $or: [{ createdBy: userId }, { "members.user": userId }],
+      isActive: true,
+    }).populate("members.user", "name email");
+
+    const circleMemberIds = userCircles.flatMap((circle) => [
+      circle.createdBy,
+      ...circle.members.map((member) => member.user._id || member.user),
+    ]);
+
+    const stories = await Story.find({
+      visibility: "family",
+      $or: [{ userId }, { userId: { $in: circleMemberIds } }],
+    })
+      .populate("userId", "name username")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, stories });
+  } catch (err) {
+    console.error("Error fetching family stories:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// -------------------------
 module.exports = {
   createStory,
   getAllStories,
@@ -265,4 +400,7 @@ module.exports = {
   getStoryById,
   updateStory,
   deleteStory,
+  getFeedStories,
+  getPublicStories,
+  getFamilyStories,
 };

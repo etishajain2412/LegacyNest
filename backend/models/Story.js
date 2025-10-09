@@ -9,7 +9,7 @@ const StorySchema = new mongoose.Schema({
   familyCircle: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "FamilyCircle",
-    required: true,
+    // required: true,
   },
   title: { type: String, required: true },
   content: { type: String, default: "" },
