@@ -112,7 +112,32 @@ function FrontPage({ user , setUser}) {
                 >
                   Profile
                 </p>
-                <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={handleLogout}>
+                <p
+                  className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
+                  onClick={() => navigate("/settings")}
+                >
+                  Settings
+                </p>
+                <p
+                  className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Dashboard
+                </p>
+                                <p
+                  className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
+                  onClick={() => navigate("/feed")}
+                >
+                  Feed
+                </p>
+                
+                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={()=>navigate("/circles")}>
+                  Circles
+                </p>
+                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={()=>navigate("/familyroom")}>
+                  FamilyRoom
+                </p>
+                                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={handleLogout}>
                   Logout
                 </p>
               </div>

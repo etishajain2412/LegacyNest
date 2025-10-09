@@ -1,5 +1,6 @@
 const express = require("express");
 const multer = require("multer");
+const { authenticateToken } = require("../middlewares/authMiddleware");
 const {
   createStory,
   getAllStories,
@@ -7,19 +8,25 @@ const {
   getOthersStories,
   getStoryById,
   updateStory,
-  deleteStory
+  deleteStory,
+  getFeedStories,
+  getPublicStories,
+  getFamilyStories,
 } = require("../controllers/storyController");
 
 const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-router.post("/", upload.single("file"), createStory);
-router.get("/", getAllStories);
-router.get("/mine/:userId", getMyStories);
-router.get("/others/:userId", getOthersStories);
-router.get("/:id", getStoryById);
-router.put("/:id",upload.single("file"), updateStory);
-router.delete("/:id", deleteStory);
+router.post("/", authenticateToken, upload.single("file"), createStory);
+router.get("/", authenticateToken, getAllStories);
+router.get("/mine/:userId", authenticateToken, getMyStories);
+router.get("/others/:userId", authenticateToken, getOthersStories);
+router.get("/feed/all", authenticateToken, getFeedStories);
+router.get("/feed/public", authenticateToken, getPublicStories);
+router.get("/feed/family", authenticateToken, getFamilyStories);
+router.get("/:id", authenticateToken, getStoryById);
+router.put("/:id", authenticateToken, upload.single("file"), updateStory);
+router.delete("/:id", authenticateToken, deleteStory);
 
 module.exports = router;
