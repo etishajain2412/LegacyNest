@@ -17,9 +17,9 @@ useEffect(() => {
       const res = await fetch("http://localhost:5000/api/stories", {
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`, // 🛡️ Send token
+          "Authorization": `Bearer ${token}`, 
         },
-        credentials: "include", // optional: use if backend needs cookies too
+        credentials: "include", 
       });
 
       if (!res.ok) {

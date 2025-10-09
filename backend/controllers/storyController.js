@@ -3,7 +3,6 @@
 // const { Readable } = require("stream");
 // const cloudinary = require("../configs/cloudinary");
 
-
 // async function uploadBufferToCloudinary(buffer, options = {}) {
 //   return new Promise((resolve, reject) => {
 //     const uploadStream = cloudinary.uploader.upload_stream(options, (err, result) => {
@@ -137,7 +136,6 @@
 //   }
 // };
 
-
 // //delete story
 // const deleteStory = async (req, res) => {
 //   try {
@@ -256,60 +254,89 @@ const createStory = async (req, res) => {
         if (mediaType === "text") {
           // use provided content as transcript
           const transcript = content || "";
-          const { summary, tags: autoTags } = await generateSummaryAndTags(transcript);
+          const { summary, tags: autoTags } = await generateSummaryAndTags(
+            transcript
+          );
           const seedText = (summary || transcript || "").slice(0, 8000);
           const embedding = await createEmbedding(seedText);
           const vectorId = `story-${saved._id.toString()}`;
 
           // upsert vector if created
           if (embedding) {
-            await safeUpsertVector(process.env.PINECONE_INDEX_NAME, vectorId, embedding, {
-              storyId: saved._id.toString(),
-              userId: user._id.toString(),
-              familyId: saved.familyId || null,
-              title: saved.title || "",
-              tags: autoTags
-            });
+            await safeUpsertVector(
+              process.env.PINECONE_INDEX_NAME,
+              vectorId,
+              embedding,
+              {
+                storyId: saved._id.toString(),
+                userId: user._id.toString(),
+                familyId: saved.familyId || null,
+                title: saved.title || "",
+                tags: autoTags,
+              }
+            );
           }
 
           // update story doc
           saved.transcript = transcript;
           saved.summary = summary;
-          saved.tags = Array.isArray(saved.tags) && saved.tags.length ? saved.tags : autoTags;
+          saved.tags =
+            Array.isArray(saved.tags) && saved.tags.length
+              ? saved.tags
+              : autoTags;
           saved.embeddingId = embedding ? vectorId : saved.embeddingId;
           await saved.save();
         } else {
           // non-text: use uploaded file buffer for STT if exists
           if (req.file && req.file.buffer) {
-            temp = await writeBufferToTempFile(req.file.buffer, req.file.originalname);
+            temp = await writeBufferToTempFile(
+              req.file.buffer,
+              req.file.originalname
+            );
           }
 
-          const transcript = await transcribeIfNeeded({ file: temp.path ? { path: temp.path } : null, text: content });
-          const { summary, tags: autoTags } = await generateSummaryAndTags(transcript);
+          const transcript = await transcribeIfNeeded({
+            file: temp.path ? { path: temp.path } : null,
+            text: content,
+          });
+          const { summary, tags: autoTags } = await generateSummaryAndTags(
+            transcript
+          );
           const seedText = (summary || transcript || "").slice(0, 8000);
           const embedding = await createEmbedding(seedText);
           const vectorId = `story-${saved._id.toString()}`;
 
           if (embedding) {
-            await safeUpsertVector(process.env.PINECONE_INDEX_NAME, vectorId, embedding, {
-              storyId: saved._id.toString(),
-              userId: user._id.toString(),
-              familyId: saved.familyId || null,
-              title: saved.title || "",
-              tags: autoTags
-            });
+            await safeUpsertVector(
+              process.env.PINECONE_INDEX_NAME,
+              vectorId,
+              embedding,
+              {
+                storyId: saved._id.toString(),
+                userId: user._id.toString(),
+                familyId: saved.familyId || null,
+                title: saved.title || "",
+                tags: autoTags,
+              }
+            );
           }
 
           saved.transcript = transcript;
           saved.summary = summary;
-          saved.tags = Array.isArray(saved.tags) && saved.tags.length ? saved.tags : autoTags;
+          saved.tags =
+            Array.isArray(saved.tags) && saved.tags.length
+              ? saved.tags
+              : autoTags;
           saved.embeddingId = embedding ? vectorId : saved.embeddingId;
           await saved.save();
 
           await temp.cleanupFn();
         }
       } catch (innerErr) {
-        console.warn("Post-save processing failed (createStory):", innerErr.message || innerErr);
+        console.warn(
+          "Post-save processing failed (createStory):",
+          innerErr.message || innerErr
+        );
       }
     })();
 
@@ -384,40 +411,45 @@ const getOthersStories = async (req, res) => {
 
 async function urlToBase64(url) {
   const response = await fetch(url);
-  const arrayBuffer = await response.arrayBuffer(); 
-  const buffer = Buffer.from(arrayBuffer);         
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
   return buffer.toString("base64");
 }
-
 
 const getStoryById = async (req, res) => {
   try {
     const { id } = req.params;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, message: "Invalid story ID" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid story ID" });
     }
 
     const story = await Story.findById(id).populate("userId", "name");
 
     if (!story)
-      return res.status(404).json({ success: false, message: "Story not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Story not found" });
 
     let prompt;
     let contents = [];
-
+    //console.log("content", story.content);
+    //console.log("mediaType", story.mediaType);
     if (story.mediaType === "text") {
       prompt = `
         You are an AI assistant that analyzes personal stories provided as text.
         Analyze this story and return JSON strictly in this format:
-        {"tags":["..."],"summary":"...","category":""}
+        {"tags":["..."],
+        "summary":"...","
+        category":""}
 
         Title: ${story.title}
         Content: ${story.content || ""}
       `;
 
       contents = [{ parts: [{ text: prompt }] }];
-
     } else if (story.mediaType === "photo" && story.mediaUrl) {
       const base64Img = await urlToBase64(story.mediaUrl);
 
@@ -436,7 +468,7 @@ const getStoryById = async (req, res) => {
             { text: prompt },
             {
               inline_data: {
-                mime_type: "image/jpeg", 
+                mime_type: "image/jpeg",
                 data: base64Img,
               },
             },
@@ -444,8 +476,14 @@ const getStoryById = async (req, res) => {
         },
       ];
     }
+    //nsole.log("contents", contents.parts
 
-    if ((!story.aiAnalysis || !story.aiAnalysis.tags?.length || !story.aiAnalysis.summary) && contents.length) {
+    if (
+      (!story.aiAnalysis ||
+        !story.aiAnalysis.tags?.length ||
+        !story.aiAnalysis.summary) &&
+      contents.length
+    ) {
       try {
         const aiRes = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
@@ -458,12 +496,21 @@ const getStoryById = async (req, res) => {
 
         const aiData = await aiRes.json();
         let text = aiData?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        text = text.replace(/json|/g, "").trim();
+
+      //console.log("AI raw text:", text);
+
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
 
         let json;
         try {
-          json = JSON.parse(text);
-        } catch {
+          if (jsonMatch) {
+            json = JSON.parse(jsonMatch[0]);
+            console.log("Parsed JSON:", json);
+          } else {
+            throw new Error("No JSON found in AI response");
+          }
+        } catch (err) {
+          console.error("Failed to parse JSON:", err);
           json = { tags: [], summary: "", category: "Unclassified" };
         }
 
@@ -472,7 +519,7 @@ const getStoryById = async (req, res) => {
           summary: json.summary || "",
           category: json.category || "Unclassified",
         };
-        //console.log("AI analysis:", story.aiAnalysis);
+
         await story.save();
       } catch (aiErr) {
         console.error("AI error:", aiErr);
@@ -486,17 +533,20 @@ const getStoryById = async (req, res) => {
   }
 };
 
-
-
-
 // -------------------------
 // Update Story
 // -------------------------
 const updateStory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, content = "", tags = "", mediaType, date, visibility } =
-      req.body;
+    const {
+      title,
+      content = "",
+      tags = "",
+      mediaType,
+      date,
+      visibility,
+    } = req.body;
 
     const story = await Story.findById(id);
     if (!story)
@@ -523,63 +573,95 @@ const updateStory = async (req, res) => {
 
     // If new content or file provided, re-run transcription+embedding pipeline
     let reprocessed = false;
-    if ((mediaType === "text" && content && content.trim().length > 0) || req.file) {
+    if (
+      (mediaType === "text" && content && content.trim().length > 0) ||
+      req.file
+    ) {
       reprocessed = true;
       try {
         let temp = { path: null, cleanupFn: async () => {} };
 
         if (mediaType === "text") {
           const transcript = content || "";
-          const { summary, tags: autoTags } = await generateSummaryAndTags(transcript);
+          const { summary, tags: autoTags } = await generateSummaryAndTags(
+            transcript
+          );
           const seedText = (summary || transcript || "").slice(0, 8000);
           const embedding = await createEmbedding(seedText);
           const vectorId = `story-${story._id.toString()}`;
 
           if (embedding) {
-            await safeUpsertVector(process.env.PINECONE_INDEX_NAME, vectorId, embedding, {
-              storyId: story._id.toString(),
-              userId: story.userId.toString(),
-              familyId: story.familyId || null,
-              title: title || story.title,
-              tags: autoTags
-            });
+            await safeUpsertVector(
+              process.env.PINECONE_INDEX_NAME,
+              vectorId,
+              embedding,
+              {
+                storyId: story._id.toString(),
+                userId: story.userId.toString(),
+                familyId: story.familyId || null,
+                title: title || story.title,
+                tags: autoTags,
+              }
+            );
           }
 
           story.transcript = transcript;
           story.summary = summary;
-          story.tags = Array.isArray(story.tags) && story.tags.length ? story.tags : autoTags;
+          story.tags =
+            Array.isArray(story.tags) && story.tags.length
+              ? story.tags
+              : autoTags;
           story.embeddingId = embedding ? vectorId : story.embeddingId;
         } else {
           // file case
           if (req.file && req.file.buffer) {
-            temp = await writeBufferToTempFile(req.file.buffer, req.file.originalname);
+            temp = await writeBufferToTempFile(
+              req.file.buffer,
+              req.file.originalname
+            );
           }
 
-          const transcript = await transcribeIfNeeded({ file: temp.path ? { path: temp.path } : null, text: content });
-          const { summary, tags: autoTags } = await generateSummaryAndTags(transcript);
+          const transcript = await transcribeIfNeeded({
+            file: temp.path ? { path: temp.path } : null,
+            text: content,
+          });
+          const { summary, tags: autoTags } = await generateSummaryAndTags(
+            transcript
+          );
           const seedText = (summary || transcript || "").slice(0, 8000);
           const embedding = await createEmbedding(seedText);
           const vectorId = `story-${story._id.toString()}`;
 
           if (embedding) {
-            await safeUpsertVector(process.env.PINECONE_INDEX_NAME, vectorId, embedding, {
-              storyId: story._id.toString(),
-              userId: story.userId.toString(),
-              familyId: story.familyId || null,
-              title: title || story.title,
-              tags: autoTags
-            });
+            await safeUpsertVector(
+              process.env.PINECONE_INDEX_NAME,
+              vectorId,
+              embedding,
+              {
+                storyId: story._id.toString(),
+                userId: story.userId.toString(),
+                familyId: story.familyId || null,
+                title: title || story.title,
+                tags: autoTags,
+              }
+            );
           }
 
           story.transcript = transcript;
           story.summary = summary;
-          story.tags = Array.isArray(story.tags) && story.tags.length ? story.tags : autoTags;
+          story.tags =
+            Array.isArray(story.tags) && story.tags.length
+              ? story.tags
+              : autoTags;
           story.embeddingId = embedding ? vectorId : story.embeddingId;
 
           await temp.cleanupFn();
         }
       } catch (procErr) {
-        console.warn("Post-update processing failed (updateStory):", procErr.message || procErr);
+        console.warn(
+          "Post-update processing failed (updateStory):",
+          procErr.message || procErr
+        );
       }
     }
 
@@ -697,19 +779,19 @@ const getFamilyStories = async (req, res) => {
 
     // 1. Get all family circles where user is a member
     const circles = await FamilyCircle.find({
-      "members.user": userId
+      "members.user": userId,
     }).select("_id");
 
-    const circleIds = circles.map(c => c._id);
+    const circleIds = circles.map((c) => c._id);
     //console.log("Circle IDs:", circleIds);
     if (!circleIds.length) {
-      return res.json([]); 
+      return res.json([]);
     }
 
     // 2. Get stories only from those circles with visibility "family"
     const stories = await Story.find({
       //visibility: "family",
-      familyCircle: { $in: circleIds }
+      familyCircle: { $in: circleIds },
     })
       .populate("userId", "name email")
       .populate("familyCircle", "name description")
@@ -721,7 +803,6 @@ const getFamilyStories = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
 
 // -------------------------
 module.exports = {
@@ -736,5 +817,3 @@ module.exports = {
   getPublicStories,
   getFamilyStories,
 };
-
-
