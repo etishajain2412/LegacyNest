@@ -3,7 +3,6 @@ const User = require("../models/user");
 const FamilyCircle = require("../models/familyCircle");
 const { Readable } = require("stream");
 const cloudinary = require("../configs/cloudinary");
-const Tesseract = require("tesseract.js");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
@@ -129,14 +128,23 @@ const getOthersStories = async (req, res) => {
   }
 };
 
-// -------------------------
-// Get Story by ID (includes AI + OCR + visibility check)
-// -------------------------
+//get story by id
+// const getStoryById = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const story = await Story.findById(id).populate("userId", "name");
+//     if (!story) return res.status(404).json({ success: false, message: "Story not found" });
+//     res.json({ success: true, story });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
+
 const getStoryById = async (req, res) => {
   try {
     const { id } = req.params;
-    const viewerId = req.user ? req.user._id : null;
-
+    
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return res
         .status(400)
@@ -182,41 +190,54 @@ const getStoryById = async (req, res) => {
         .status(403)
         .json({ success: false, error: "You don't have permission to view this story" });
 
-    let contentToAnalyze = story.content || "";
+    let prompt;
+    let contents = [];
 
-    // Extract text from image
+    // If mediaType is photo, extract text
     if (story.mediaType === "photo" && story.mediaUrl) {
       try {
-        const {
-          data: { text },
-        } = await Tesseract.recognize(story.mediaUrl, "eng");
+        const { data: { text } } = await Tesseract.recognize(story.mediaUrl, "eng", {
+          //logger: (m) => console.log(m), // optional progress logging
+        });
         contentToAnalyze = text;
       } catch (ocrErr) {
         console.error("OCR error:", ocrErr);
       }
     }
 
-    // Generate AI analysis if not exists
-    if (
-      (!story.aiAnalysis ||
-        !story.aiAnalysis.tags?.length ||
-        !story.aiAnalysis.summary) &&
-      contentToAnalyze
-    ) {
+    // If AI analysis doesn't exist or incomplete
+    if ((!story.aiAnalysis || !story.aiAnalysis.tags.length || !story.aiAnalysis.summary) && contentToAnalyze) {
       const prompt = `
+        You are an AI assistant that analyzes a short personal story. 
         Analyze this story and return JSON:
         {"tags":["..."],"summary":"...","category":""}
+
         Title: ${story.title}
-        Content: ${contentToAnalyze}
       `;
 
+      contents = [
+        {
+          parts: [
+            { text: prompt },
+            {
+              inline_data: {
+                mime_type: "image/jpeg", 
+                data: base64Img,
+              },
+            },
+          ],
+        },
+      ];
+    }
+
+    if ((!story.aiAnalysis || !story.aiAnalysis.tags?.length || !story.aiAnalysis.summary) && contents.length) {
       try {
         const aiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+            body: JSON.stringify({ contents }),
           }
         );
 
@@ -228,15 +249,15 @@ const getStoryById = async (req, res) => {
         try {
           json = JSON.parse(text);
         } catch {
-          json = { tags: [], summary: "", category: "Uncategorized" };
+          json = { tags: [], summary: "", category: "Unclassified" };
         }
 
         story.aiAnalysis = {
           tags: json.tags || [],
           summary: json.summary || "",
-          category: json.category || "Uncategorized",
+          category: json.category || "Unclassified",
         };
-
+        console.log("AI analysis:", story.aiAnalysis);
         await story.save();
       } catch (aiErr) {
         console.error("AI error:", aiErr);
@@ -249,6 +270,8 @@ const getStoryById = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
 
 // -------------------------
 // Update Story
