@@ -11,6 +11,7 @@ import Profile from "./pages/Profile";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import PromptsPage from "./pages/PromptsPage"; 
+import MatchesPage from "./pages/MatchesPage";
 
 
 function ProtectedRoute({ user, children }) {
@@ -102,6 +103,14 @@ export default function App() {
           element={
             <ProtectedRoute user={user}>
               <PromptsPage user={user} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/matches"
+          element={
+            <ProtectedRoute user={user}>
+              <MatchesPage user={user} />
             </ProtectedRoute>
           }
         />

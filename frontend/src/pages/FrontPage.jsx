@@ -155,7 +155,7 @@ function FrontPage({ user , setUser}) {
         </div>
 
         <div
-          onClick={() => navigate("/prompts")}
+          onClick={() => navigate("/matches")}
           className="p-6 border-2 shadow cursor-pointer text-center transition"
         >
           <img
