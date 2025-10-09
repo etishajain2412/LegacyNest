@@ -118,18 +118,15 @@ const storyRoutes = require('./routes/storyRoutes.js');
 const profileRoutes = require('./routes/profileRoutes.js');
 const promptRoutes = require('./routes/promptRoutes');
 const matchRoutes = require('./routes/matchRoutes'); 
-const sharedPromptRoutes = require('./routes/sharedPromptRoutes');
+
 
 
 const { setIo, register, unregisterBySocket } = require("./utils/socketManager");
 const { startPromptWorker } = require("./worker/promptWorker"); 
 
 // Import routes
-const authRoutes = require("./routes/authRoutes");
-const storyRoutes = require("./routes/storyRoutes");
-const profileRoutes = require("./routes/profileRoutes");
+
 const familyCircleRoutes = require("./routes/familyCircleRoutes");
-const promptRoutes = require('./routes/promptRoutes');
 const calendarRoutes = require("./routes/calendarRoutes");
 
 dotenv.config();
@@ -142,7 +139,7 @@ app.use(cookieParser());
 app.use(passport.initialize());
 
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin:  ["http://localhost:3000"],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
@@ -225,7 +222,7 @@ app.use("/api/circles", familyCircleRoutes);
 app.use("/api/prompts", promptRoutes);
 app.use("/api/calendar", calendarRoutes);
 app.use('/api/matches', matchRoutes); 
-app.use('/api/shared-prompts', sharedPromptRoutes);
+
 
 
 // 👋 Root

@@ -169,9 +169,9 @@ const { Readable } = require("stream");
 const { v4: uuidv4 } = require("uuid");
 
 const Story = require("../models/Story");
-const User = require("../models/user");
+const User = require("../models/User");
 const FamilyCircle = require("../models/familyCircle");
-const { Readable } = require("stream");
+
 const cloudinary = require("../configs/cloudinary");
 const mongoose = require("mongoose");
 require("dotenv").config();

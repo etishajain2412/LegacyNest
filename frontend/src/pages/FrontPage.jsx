@@ -129,17 +129,12 @@ function FrontPage({ user, setUser }) {
                 >
                   Profile
                 </p>
+                
                 <p
                   className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
-                  onClick={() => navigate("/settings")}
+                  onClick={() => navigate("/matches")}
                 >
-                  Settings
-                </p>
-                <p
-                  className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
-                  onClick={() => navigate("/dashboard")}
-                >
-                  Dashboard
+                  Matches
                 </p>
                                 <p
                   className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
@@ -155,9 +150,6 @@ function FrontPage({ user, setUser }) {
                   FamilyRoom
                 </p>
                                 <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={handleLogout}>
-                  className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer"
-                  onClick={handleLogout}
-                >
                   Logout
                 </p>
               </div>
