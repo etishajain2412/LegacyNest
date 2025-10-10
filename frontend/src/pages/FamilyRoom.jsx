@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import axiosInstance from "../utils/axiosInstance";
-import { Users, Loader2, PlusCircle, XCircle, Save } from "lucide-react";
+import { Users, Loader2, PlusCircle, XCircle, Save, Lock, Unlock } from "lucide-react";
 
 const socket = io("http://localhost:5000", { withCredentials: true });
 
@@ -81,6 +81,8 @@ export default function FamilyRoom({ user }) {
   const handleChange = (e) => {
     const newContent = e.target.value;
     setContent(newContent);
+    
+    if (editingStory?.locked && editingStory?.lockedBy !== user._id) return;
 
     // Emit real-time update
     socket.emit("updateStory", {
@@ -94,6 +96,7 @@ export default function FamilyRoom({ user }) {
   };
 
   const handleAutoSave = async (newContent) => {
+    if (!editingStory) return;
     try {
       setSaving(true);
       await axiosInstance.put(`/collab-stories/${editingStory._id}`, {
@@ -110,6 +113,50 @@ export default function FamilyRoom({ user }) {
     }
   };
 
+  // ---------------- Toggle Lock ----------------
+  // const handleToggleLock = () => {
+
+  //   if (!editingStory) return;
+  //   // if(editingStory.locked && editingStory.lockedBy !== user.id) {
+  //   //   alert("Story is locked by another user.");
+  //   //   return;
+  //   // }
+  //   const newLock = !editingStory.locked;
+  //   socket.emit("toggleStoryLock", {
+  //     storyId: editingStory._id,
+  //     lock: newLock,
+  //     userName: user.name,
+  //   });
+  // };
+const handleToggleLock = async () => {
+  if (!editingStory) return;
+  //console.log("me", user);
+  //console.log("editingStory", editingStory.lockedBy);
+  if (editingStory.locked && editingStory.lockedByName !== user.name) {
+    alert("Only the user who locked this story can unlock it.");
+    return;
+  }
+
+  const newLock = !editingStory.locked;
+
+  try {
+    const res = await axiosInstance.put(`/collab-stories/${editingStory._id}/lock`, {
+      lock: newLock,
+    });
+
+    const updatedStory = res.data.story;
+    setEditingStory(updatedStory);
+
+    socket.emit("storyLockChanged", {
+      storyId: updatedStory._id,
+      locked: updatedStory.locked,
+      lockedBy: updatedStory.lockedByName || user.name,
+    });
+  } catch (err) {
+    console.error("Error toggling lock:", err);
+  }
+};
+
   // ---------------- Socket Listeners ----------------
   useEffect(() => {
     socket.on("storyUpdated", ({ content }) => {
@@ -121,11 +168,27 @@ export default function FamilyRoom({ user }) {
       setTimeout(() => setStatus(""), 3000);
     });
 
+    socket.on("storyLockChanged", ({ storyId, locked, lockedBy }) => {
+      if (editingStory?._id === storyId) {
+        setEditingStory((prev) => ({
+          ...prev,
+          locked,
+          lockedBy,
+        }));
+        setStatus(
+          locked
+            ? `${lockedBy} locked the story`
+            : `${lockedBy} unlocked the story`
+        );
+      }
+    });
+
     return () => {
       socket.off("storyUpdated");
       socket.off("editingNotification");
+      socket.off("storyLockChanged");
     };
-  }, []);
+  }, [editingStory]);
 
   // ---------------- UI ----------------
   return (
@@ -227,31 +290,50 @@ export default function FamilyRoom({ user }) {
               <XCircle className="w-5 h-5" />
             </button>
 
+            {/* Editor Header */}
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-xl font-semibold text-gray-800">
                 Editing: {editingStory.title}
               </h2>
-              <div className="flex items-center gap-2 text-gray-600">
-                {saving ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : (
-                  <Save size={18} />
-                )}
-                <span>{saving ? "Saving..." : "Saved"}</span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleToggleLock}
+                  className={`px-3 py-1 rounded-lg text-white ${
+                    editingStory?.locked ? "bg-red-600" : "bg-green-600"
+                  } flex items-center gap-1`}
+                >
+                  {editingStory?.locked ? <Unlock size={16} /> : <Lock size={16} />}
+                  {editingStory?.locked ? "Unlock" : "Lock"}
+                </button>
+
+                <div className="flex items-center gap-2 text-gray-600">
+                  {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                  <span>{saving ? "Saving..." : "Saved"}</span>
+                </div>
               </div>
             </div>
 
+            {/* Textarea */}
             <textarea
               value={content}
               onChange={handleChange}
-              className="w-full h-[70vh] border rounded-xl p-4 resize-none focus:ring-2 focus:ring-green-500 outline-none"
-              placeholder="Start writing collaboratively..."
+              disabled={editingStory?.locked && editingStory?.lockedBy !== user._id}
+              className={`w-full h-[70vh] border rounded-xl p-4 resize-none outline-none ${
+                editingStory?.locked && editingStory?.lockedBy !== user._id
+                  ? "bg-gray-100 cursor-not-allowed"
+                  : "focus:ring-2 focus:ring-green-500"
+              }`}
+              placeholder={
+                editingStory?.locked && editingStory?.lockedBy !== user._id
+                  ? "Story is locked by another user..."
+                  : "Start writing collaboratively..."
+              }
             />
 
+            {/* Status */}
             {status && (
-              <div className="text-center mt-3 text-sm text-green-600">
-                {status}
-              </div>
+              <div className="text-center mt-3 text-sm text-green-600">{status}</div>
             )}
           </div>
         )}
