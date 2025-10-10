@@ -23,7 +23,6 @@ export default function CircleRoomPanel({ circle, user, socket }) {
     };
   }, [circle._id, user, socket]);
 
-  // Handle start/stop editing
   const startEditing = (storyTitle) => {
     setEditingStory(storyTitle);
     socket.emit("startEditingStory", {
@@ -44,7 +43,6 @@ export default function CircleRoomPanel({ circle, user, socket }) {
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-      {/* Header */}
       <h2 className="text-2xl font-bold font-serif text-gray-900 mb-1">
         🏠 {circle.name}
       </h2>
@@ -52,7 +50,6 @@ export default function CircleRoomPanel({ circle, user, socket }) {
         {circle.description || "No description available."}
       </p>
 
-      {/* Activity Feed */}
       <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-48 overflow-y-auto">
         <h4 className="font-semibold text-gray-800 mb-2">Live Activity</h4>
         {notifications.length === 0 ? (
@@ -75,7 +72,6 @@ export default function CircleRoomPanel({ circle, user, socket }) {
         )}
       </div>
 
-      {/* Simulated Editing Buttons */}
       <div className="mb-6">
         {!editingStory ? (
           <button
@@ -94,7 +90,6 @@ export default function CircleRoomPanel({ circle, user, socket }) {
         )}
       </div>
 
-      {/* Members */}
       <div>
         <h4 className="font-semibold text-gray-800 mb-2">Members</h4>
         <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">

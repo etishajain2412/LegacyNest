@@ -5,7 +5,6 @@ const API = axios.create({
   withCredentials: true,
 });
 
-// existing exports...
 export const fetchPrompts = async () => {
   const { data } = await API.get("/prompts/instances");
   return data;
@@ -26,9 +25,7 @@ export const skipPrompt = async (id) => {
   return data;
 };
 
-// NEW: request an immediate dynamic prompt (Gemini/fallback)
 export const createDynamicPrompt = async (body = {}) => {
-  // body can be {} or { userId: "..." } if you support that flow
   const { data } = await API.post("/prompts/dynamic", body);
   return data;
 };

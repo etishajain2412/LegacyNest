@@ -1,4 +1,3 @@
-// src/components/ui/MatchCard.jsx
 import React from 'react';
 
 /**

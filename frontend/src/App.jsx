@@ -99,7 +99,6 @@ export default function App() {
           }
         />
 
-        {/* Stories Management */}
         <Route
           path="/stories"
           element={
@@ -109,7 +108,6 @@ export default function App() {
           }
         />
 
-        {/* Family Circles */}
         <Route
           path="/circles"
           element={

@@ -17,7 +17,6 @@ export default function FamilyRoom({ user }) {
   const [joinId, setJoinId] = useState("");
   const timeoutRef = useRef(null);
 
-  // ---------------- Fetch Families ----------------
   useEffect(() => {
     const fetchFamilies = async () => {
       try {
@@ -30,7 +29,6 @@ export default function FamilyRoom({ user }) {
     fetchFamilies();
   }, []);
 
-  // ---------------- Fetch Stories ----------------
   const fetchStories = async (familyId) => {
     try {
       const res = await axiosInstance.get(`/collab-stories/circle/${familyId}`);
@@ -40,14 +38,12 @@ export default function FamilyRoom({ user }) {
     }
   };
 
-  // ---------------- Select Family ----------------
   const handleSelectFamily = (family) => {
     setSelectedFamily(family);
     setEditingStory(null);
     fetchStories(family._id);
   };
 
-  // ---------------- Create Story ----------------
   const handleCreateStory = async () => {
     if (!title.trim()) return;
     try {
@@ -62,7 +58,6 @@ export default function FamilyRoom({ user }) {
     }
   };
 
-  // ---------------- Join Story ----------------
   const handleJoinStory = async () => {
     try {
       const res = await axiosInstance.get(`/collab-stories/${joinId}`);
@@ -77,20 +72,17 @@ export default function FamilyRoom({ user }) {
     }
   };
 
-  // ---------------- Collaborative Editing ----------------
   const handleChange = (e) => {
     const newContent = e.target.value;
     setContent(newContent);
     
     if (editingStory?.locked && editingStory?.lockedBy !== user._id) return;
 
-    // Emit real-time update
     socket.emit("updateStory", {
       storyId: editingStory._id,
       content: newContent,
     });
 
-    // Auto-save with debounce
     clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => handleAutoSave(newContent), 1000);
   };
@@ -113,7 +105,6 @@ export default function FamilyRoom({ user }) {
     }
   };
 
-  // ---------------- Toggle Lock ----------------
   // const handleToggleLock = () => {
 
   //   if (!editingStory) return;
@@ -157,7 +148,6 @@ const handleToggleLock = async () => {
   }
 };
 
-  // ---------------- Socket Listeners ----------------
   useEffect(() => {
     socket.on("storyUpdated", ({ content }) => {
       setContent(content);
@@ -190,10 +180,8 @@ const handleToggleLock = async () => {
     };
   }, [editingStory]);
 
-  // ---------------- UI ----------------
   return (
     <div className="flex h-screen">
-      {/* Sidebar */}
       <div className="w-64 bg-gray-100 border-r p-4 overflow-y-auto">
         <h2 className="text-2xl font-semibold mb-4 mt-12 font-serif">Family Circles</h2>
         {families.map((family) => (
@@ -214,7 +202,6 @@ const handleToggleLock = async () => {
         ))}
       </div>
 
-      {/* Main Area */}
       <div className="flex-1 p-6 overflow-y-auto">
         {!selectedFamily ? (
           <p className="text-gray-500">Select a family to view stories</p>
@@ -224,7 +211,6 @@ const handleToggleLock = async () => {
               {selectedFamily.name} — Stories
             </h1>
 
-            {/* Create or Join */}
             <div className="flex items-center gap-2 mb-6">
               <input
                 placeholder="New story title..."
@@ -253,7 +239,6 @@ const handleToggleLock = async () => {
               </button>
             </div>
 
-            {/* Story List */}
             {stories.length === 0 ? (
               <p>No stories yet.</p>
             ) : (
@@ -281,7 +266,6 @@ const handleToggleLock = async () => {
             )}
           </>
         ) : (
-          // Collaborative Editor
           <div className="bg-white p-5 rounded-2xl shadow relative">
             <button
               onClick={() => setEditingStory(null)}
@@ -290,7 +274,6 @@ const handleToggleLock = async () => {
               <XCircle className="w-5 h-5" />
             </button>
 
-            {/* Editor Header */}
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-xl font-semibold text-gray-800">
                 Editing: {editingStory.title}
@@ -314,7 +297,6 @@ const handleToggleLock = async () => {
               </div>
             </div>
 
-            {/* Textarea */}
             <textarea
               value={content}
               onChange={handleChange}
@@ -331,7 +313,6 @@ const handleToggleLock = async () => {
               }
             />
 
-            {/* Status */}
             {status && (
               <div className="text-center mt-3 text-sm text-green-600">{status}</div>
             )}
