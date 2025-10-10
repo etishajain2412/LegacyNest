@@ -11,14 +11,12 @@ const FeedPage = ({ user }) => {
   const [filter, setFilter] = useState("all");
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Load feed when user or filter changes
   useEffect(() => {
     if (user?.id) {
       fetchFeedStories();
     }
   }, [user, filter]);
 
-  // Set filter from URL on mount
   useEffect(() => {
     const urlFilter = searchParams.get("filter");
     if (urlFilter && ["all", "public", "family"].includes(urlFilter)) {
@@ -26,15 +24,12 @@ const FeedPage = ({ user }) => {
     }
   }, [searchParams]);
 
-  // -------------------------
-  // Fetch stories by filter
-  // -------------------------
+
   const fetchFeedStories = async () => {
     setLoading(true);
     try {
       const token = Cookies.get("accessToken");
 
-      // Map filters to backend routes
       const endpoints = {
         all: "/stories/feed/all",
         public: "/stories/feed/public",
@@ -49,7 +44,6 @@ const FeedPage = ({ user }) => {
 
       setStories(data.stories || []);
 
-      // Optional: compute basic stats from returned stories
       const computedStats = computeStats(data.stories || []);
       setStats(computedStats);
     } catch (error) {
@@ -60,9 +54,7 @@ const FeedPage = ({ user }) => {
     }
   };
 
-  // -------------------------
-  // Compute stats locally
-  // -------------------------
+
   const computeStats = (stories) => {
     const publicCount = stories.filter((s) => s.visibility === "public").length;
     const familyCount = stories.filter((s) => s.visibility === "family").length;
@@ -100,7 +92,6 @@ const FeedPage = ({ user }) => {
   return (
     <div className="min-h-screen bg-white text-gray-900 p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
@@ -128,7 +119,6 @@ const FeedPage = ({ user }) => {
           </div>
         </div>
 
-        {/* Stats and Filters */}
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             {stats && (
@@ -159,7 +149,6 @@ const FeedPage = ({ user }) => {
               </div>
             )}
 
-            {/* Filters */}
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => handleFilterChange("all")}
@@ -198,7 +187,6 @@ const FeedPage = ({ user }) => {
           </div>
         </div>
 
-        {/* Stories Feed */}
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
           {loading ? (
             <div className="flex flex-col items-center py-12">

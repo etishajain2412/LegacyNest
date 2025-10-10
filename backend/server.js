@@ -109,6 +109,25 @@ io.on("connection", (socket) => {
     });
   });
 
+  // Lock/Unlock Story
+  socket.on("toggleStoryLock", async ({ storyId, lock, userName }) => {
+  try {
+    const story = await CollaborativeStory.findById(storyId);
+    if (!story) return;
+
+    story.locked = lock;
+    story.lockedBy = lock ? socket.userId : null;
+    await story.save();
+
+    io.to(storyId).emit("storyLockChanged", {
+      storyId,
+      locked: lock,
+      lockedBy: userName,
+    });
+  } catch (err) {
+    console.error(err.message);
+  }
+});
   // Live Content Update
   socket.on("updateStory", async ({ storyId, content }) => {
     try {

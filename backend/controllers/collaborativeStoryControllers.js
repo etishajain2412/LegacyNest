@@ -57,3 +57,27 @@ exports.updateStoryContent = async (req, res) => {
     res.status(500).json({ message: "Error updating story" });
   }
 };
+
+exports.toggleLockStory = async (req, res) => {
+  try {
+    const { storyId } = req.params;
+    const { lock } = req.body; // true or false
+    const story = await CollaborativeStory.findById(storyId);
+    if (!story) return res.status(404).json({ message: "Story not found" });
+
+    if (story.locked && story.lockedBy.toString() !== req.user._id.toString() && !lock) {
+      return res.status(403).json({ message: "Only the user who locked this story can unlock it" });
+    }
+
+    story.locked = lock;
+    story.lockedBy = lock ? req.user._id : null;
+    await story.save();
+
+    const populatedStory = await CollaborativeStory.findById(story._id).populate("lockedBy", "name");
+    res.json({ story: { ...populatedStory.toObject(), lockedByName: populatedStory.lockedBy?.name } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error toggling lock" });
+  }
+};
+

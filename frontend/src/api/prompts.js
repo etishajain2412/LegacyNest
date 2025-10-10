@@ -1,6 +1,10 @@
 import axiosInstance from "../utils/axiosInstance"; // ✅ use shared axios instance
 
-// ------------------ Fetch Prompts ------------------
+const API = axios.create({
+  baseURL: "http://localhost:5000/api",
+  withCredentials: true,
+});
+
 export const fetchPrompts = async () => {
   const { data } = await axiosInstance.get("/prompts/instances");
   return data;
@@ -24,9 +28,7 @@ export const skipPrompt = async (id) => {
   return data;
 };
 
-// ------------------ Dynamic Prompt (Gemini / fallback) ------------------
 export const createDynamicPrompt = async (body = {}) => {
-  // body can be {} or { userId: "..." } depending on your flow
-  const { data } = await axiosInstance.post("/prompts/dynamic", body);
+  const { data } = await API.post("/prompts/dynamic", body);
   return data;
 };

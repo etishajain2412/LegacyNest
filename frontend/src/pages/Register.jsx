@@ -20,12 +20,10 @@ const Register = ({ setUser }) => {
   const location = useLocation();
 
   useEffect(() => {
-    // Redirect if already logged in
     if (Cookies.get("user") && !location.state?.fromApp) {
       navigate("/profile");
     }
 
-    // Handle error message passed via URL (e.g., from Google OAuth)
     const params = new URLSearchParams(location.search);
     const error = params.get("error");
     if (error) {
@@ -70,7 +68,6 @@ const Register = ({ setUser }) => {
       const response = await axiosInstance.post("/auth/register", formData);
       const { accessToken, user } = response.data;
 
-      // Save tokens in cookies
       Cookies.set("accessToken", accessToken, {
         expires: new Date(Date.now() + 15 * 60 * 1000),
         secure: process.env.NODE_ENV === "production",

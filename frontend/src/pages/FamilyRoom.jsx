@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import axiosInstance from "../utils/axiosInstance";
-import { Users, Loader2, PlusCircle, XCircle, Save } from "lucide-react";
+import { Users, Loader2, PlusCircle, XCircle, Save, Lock, Unlock } from "lucide-react";
 
 // Determine backend URL dynamically
 const BACKEND_URL =
@@ -27,7 +27,6 @@ export default function FamilyRoom({ user }) {
   const [joinId, setJoinId] = useState("");
   const timeoutRef = useRef(null);
 
-  // ---------------- Fetch Families ----------------
   useEffect(() => {
     const fetchFamilies = async () => {
       try {
@@ -40,7 +39,6 @@ export default function FamilyRoom({ user }) {
     fetchFamilies();
   }, []);
 
-  // ---------------- Fetch Stories ----------------
   const fetchStories = async (familyId) => {
     try {
       const res = await axiosInstance.get(`/collab-stories/circle/${familyId}`);
@@ -50,14 +48,12 @@ export default function FamilyRoom({ user }) {
     }
   };
 
-  // ---------------- Select Family ----------------
   const handleSelectFamily = (family) => {
     setSelectedFamily(family);
     setEditingStory(null);
     fetchStories(family._id);
   };
 
-  // ---------------- Create Story ----------------
   const handleCreateStory = async () => {
     if (!title.trim()) return;
     try {
@@ -72,7 +68,6 @@ export default function FamilyRoom({ user }) {
     }
   };
 
-  // ---------------- Join Story ----------------
   const handleJoinStory = async () => {
     try {
       const res = await axiosInstance.get(`/collab-stories/${joinId}`);
@@ -87,23 +82,23 @@ export default function FamilyRoom({ user }) {
     }
   };
 
-  // ---------------- Collaborative Editing ----------------
   const handleChange = (e) => {
     const newContent = e.target.value;
     setContent(newContent);
+    
+    if (editingStory?.locked && editingStory?.lockedBy !== user._id) return;
 
-    // Emit real-time update
     socket.emit("updateStory", {
       storyId: editingStory._id,
       content: newContent,
     });
 
-    // Auto-save with debounce
     clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => handleAutoSave(newContent), 1000);
   };
 
   const handleAutoSave = async (newContent) => {
+    if (!editingStory) return;
     try {
       setSaving(true);
       await axiosInstance.put(`/collab-stories/${editingStory._id}`, {
@@ -120,7 +115,49 @@ export default function FamilyRoom({ user }) {
     }
   };
 
-  // ---------------- Socket Listeners ----------------
+  // const handleToggleLock = () => {
+
+  //   if (!editingStory) return;
+  //   // if(editingStory.locked && editingStory.lockedBy !== user.id) {
+  //   //   alert("Story is locked by another user.");
+  //   //   return;
+  //   // }
+  //   const newLock = !editingStory.locked;
+  //   socket.emit("toggleStoryLock", {
+  //     storyId: editingStory._id,
+  //     lock: newLock,
+  //     userName: user.name,
+  //   });
+  // };
+const handleToggleLock = async () => {
+  if (!editingStory) return;
+  //console.log("me", user);
+  //console.log("editingStory", editingStory.lockedBy);
+  if (editingStory.locked && editingStory.lockedByName !== user.name) {
+    alert("Only the user who locked this story can unlock it.");
+    return;
+  }
+
+  const newLock = !editingStory.locked;
+
+  try {
+    const res = await axiosInstance.put(`/collab-stories/${editingStory._id}/lock`, {
+      lock: newLock,
+    });
+
+    const updatedStory = res.data.story;
+    setEditingStory(updatedStory);
+
+    socket.emit("storyLockChanged", {
+      storyId: updatedStory._id,
+      locked: updatedStory.locked,
+      lockedBy: updatedStory.lockedByName || user.name,
+    });
+  } catch (err) {
+    console.error("Error toggling lock:", err);
+  }
+};
+
   useEffect(() => {
     socket.on("storyUpdated", ({ content }) => {
       setContent(content);
@@ -131,16 +168,30 @@ export default function FamilyRoom({ user }) {
       setTimeout(() => setStatus(""), 3000);
     });
 
+    socket.on("storyLockChanged", ({ storyId, locked, lockedBy }) => {
+      if (editingStory?._id === storyId) {
+        setEditingStory((prev) => ({
+          ...prev,
+          locked,
+          lockedBy,
+        }));
+        setStatus(
+          locked
+            ? `${lockedBy} locked the story`
+            : `${lockedBy} unlocked the story`
+        );
+      }
+    });
+
     return () => {
       socket.off("storyUpdated");
       socket.off("editingNotification");
+      socket.off("storyLockChanged");
     };
-  }, []);
+  }, [editingStory]);
 
-  // ---------------- UI ----------------
   return (
     <div className="flex h-screen">
-      {/* Sidebar */}
       <div className="w-64 bg-gray-100 border-r p-4 overflow-y-auto">
         <h2 className="text-2xl font-semibold mb-4 mt-12 font-serif">Family Circles</h2>
         {families.map((family) => (
@@ -161,7 +212,6 @@ export default function FamilyRoom({ user }) {
         ))}
       </div>
 
-      {/* Main Area */}
       <div className="flex-1 p-6 overflow-y-auto">
         {!selectedFamily ? (
           <p className="text-gray-500">Select a family to view stories</p>
@@ -171,7 +221,6 @@ export default function FamilyRoom({ user }) {
               {selectedFamily.name} — Stories
             </h1>
 
-            {/* Create or Join */}
             <div className="flex items-center gap-2 mb-6">
               <input
                 placeholder="New story title..."
@@ -200,7 +249,6 @@ export default function FamilyRoom({ user }) {
               </button>
             </div>
 
-            {/* Story List */}
             {stories.length === 0 ? (
               <p>No stories yet.</p>
             ) : (
@@ -228,7 +276,6 @@ export default function FamilyRoom({ user }) {
             )}
           </>
         ) : (
-          // Collaborative Editor
           <div className="bg-white p-5 rounded-2xl shadow relative">
             <button
               onClick={() => setEditingStory(null)}
@@ -241,27 +288,43 @@ export default function FamilyRoom({ user }) {
               <h2 className="text-xl font-semibold text-gray-800">
                 Editing: {editingStory.title}
               </h2>
-              <div className="flex items-center gap-2 text-gray-600">
-                {saving ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : (
-                  <Save size={18} />
-                )}
-                <span>{saving ? "Saving..." : "Saved"}</span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleToggleLock}
+                  className={`px-3 py-1 rounded-lg text-white ${
+                    editingStory?.locked ? "bg-red-600" : "bg-green-600"
+                  } flex items-center gap-1`}
+                >
+                  {editingStory?.locked ? <Unlock size={16} /> : <Lock size={16} />}
+                  {editingStory?.locked ? "Unlock" : "Lock"}
+                </button>
+
+                <div className="flex items-center gap-2 text-gray-600">
+                  {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                  <span>{saving ? "Saving..." : "Saved"}</span>
+                </div>
               </div>
             </div>
 
             <textarea
               value={content}
               onChange={handleChange}
-              className="w-full h-[70vh] border rounded-xl p-4 resize-none focus:ring-2 focus:ring-green-500 outline-none"
-              placeholder="Start writing collaboratively..."
+              disabled={editingStory?.locked && editingStory?.lockedBy !== user._id}
+              className={`w-full h-[70vh] border rounded-xl p-4 resize-none outline-none ${
+                editingStory?.locked && editingStory?.lockedBy !== user._id
+                  ? "bg-gray-100 cursor-not-allowed"
+                  : "focus:ring-2 focus:ring-green-500"
+              }`}
+              placeholder={
+                editingStory?.locked && editingStory?.lockedBy !== user._id
+                  ? "Story is locked by another user..."
+                  : "Start writing collaboratively..."
+              }
             />
 
             {status && (
-              <div className="text-center mt-3 text-sm text-green-600">
-                {status}
-              </div>
+              <div className="text-center mt-3 text-sm text-green-600">{status}</div>
             )}
           </div>
         )}

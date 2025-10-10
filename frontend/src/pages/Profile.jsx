@@ -198,7 +198,6 @@ const Profile = ({ user, setUser }) => {
                     )}
                   </div>
 
-                  {/* BIRTH YEAR SECTION */}
                   <div className="bg-gray-50 p-4 rounded-lg mt-4 border-1">
                     {!editBirthYear ? (
                       <div className="flex justify-between items-center ">
@@ -255,7 +254,6 @@ const Profile = ({ user, setUser }) => {
                       </form>
                     )}
                   </div>
-                  {/* END BIRTH YEAR SECTION */}
 
                   <div className="bg-gray-50 p-4 rounded-lg mt-4 border-1">
                     {!changePassword ? (
