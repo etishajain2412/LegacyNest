@@ -6,7 +6,7 @@ const generateTokens = (userId) => {
   const accessToken = jwt.sign(
     { id: userId }, 
     process.env.JWT_ACCESS_SECRET, 
-    { expiresIn: '15m' }
+    { expiresIn: '48h' }
   );
   
   const refreshToken = jwt.sign(
@@ -46,7 +46,7 @@ const register = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 15 * 60 * 1000,
+      maxAge: 48 * 60 * 60 * 1000,
     });
 
     res.cookie('refreshToken', refreshToken, {
@@ -152,14 +152,14 @@ const refreshAccessToken = async (req, res) => {
     const accessToken = jwt.sign(
       { id: user._id }, 
       process.env.JWT_ACCESS_SECRET, 
-      { expiresIn: '15m' }
+      { expiresIn: '48h' }
     );
 
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 15 * 60 * 1000,
+      maxAge: 48 * 60 * 60 * 1000,
     });
 
     res.json({ 
@@ -206,7 +206,7 @@ const googleCallback = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 15 * 60 * 1000,
+      maxAge: 48 * 60 * 60 * 1000,
     });
 
     res.cookie('refreshToken', refreshToken, {
@@ -226,7 +226,7 @@ const googleCallback = async (req, res) => {
     res.cookie('user', JSON.stringify(userData), {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 15 * 60 * 1000,
+      maxAge: 48 * 60 * 60 * 1000,
     });
 
     res.redirect("http://localhost:3000/profile");

@@ -15,13 +15,19 @@ export default function EditStory({ user }) {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
+  const API_URL =
+    import.meta.env.VITE_MODE === "production"
+      ? import.meta.env.VITE_BACKEND_URL
+      : "http://localhost:5000";
+
   useEffect(() => {
     async function fetchStory() {
       try {
-        const res = await fetch(`http://localhost:5000/api/stories/${id}`);
+        const res = await fetch(`${API_URL}/api/stories/${id}`,{
+            credentials: 'include'
+        });
         const data = await res.json();
-        //console.log("EDIT FETCH data:");
-        //console.log(data);
+
         if (data.success) {
           const s = data.story;
           setStory(s);
@@ -30,13 +36,12 @@ export default function EditStory({ user }) {
           setDate(new Date(s.date).toISOString().split("T")[0]);
           setMediaType(s.mediaType);
           setTags((s.aiAnalysis?.tags || []).join(", "));
-
         } else {
           alert("Story not found");
           navigate("/timeline");
         }
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching story:", err);
         alert("Error fetching story");
         navigate("/timeline");
       } finally {
@@ -45,7 +50,7 @@ export default function EditStory({ user }) {
     }
 
     fetchStory();
-  }, [id, navigate]);
+  }, [id, navigate, API_URL]);
 
   async function handleUpdate(e) {
     e.preventDefault();
@@ -55,17 +60,20 @@ export default function EditStory({ user }) {
       const formData = new FormData();
       formData.append("title", title);
       formData.append("content", content);
-      //formData.append("tags", tags.split(",").map(t => t.trim()));
       formData.append("date", date);
       formData.append("mediaType", mediaType);
+
       if (file) formData.append("file", file);
+
       formData.append(
-      "aiAnalysis[tags]",
-      JSON.stringify(tags.split(",").map(t => t.trim()))
+        "aiAnalysis[tags]",
+        JSON.stringify(tags.split(",").map((t) => t.trim()))
       );
-      const res = await fetch(`http://localhost:5000/api/stories/${id}`, {
+
+      const res = await fetch(`${API_URL}/api/stories/${id}`, {
         method: "PUT",
         body: formData,
+        credentials: 'include'
       });
 
       const data = await res.json();
@@ -76,7 +84,7 @@ export default function EditStory({ user }) {
         alert("Failed to update story");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error updating story:", err);
       alert("Error updating story");
     } finally {
       setUpdating(false);
@@ -89,6 +97,7 @@ export default function EditStory({ user }) {
   return (
     <div className="px-6 py-10 max-w-3xl mx-auto">
       <h2 className="text-3xl font-bold mb-6 font-serif">Edit Story</h2>
+
       <form onSubmit={handleUpdate} className="flex flex-col gap-4">
         <input
           type="text"
@@ -124,7 +133,9 @@ export default function EditStory({ user }) {
         {["photo", "video", "audio"].includes(mediaType) && (
           <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-200 hover:bg-gray-200 transition w-full text-center">
             <span className="text-gray-500">
-              {file ? file.name : `Drag & drop a ${mediaType} or click to select`}
+              {file
+                ? file.name
+                : `Drag & drop a ${mediaType} or click to select`}
             </span>
             <input
               type="file"
@@ -132,8 +143,8 @@ export default function EditStory({ user }) {
                 mediaType === "photo"
                   ? "image/*"
                   : mediaType === "video"
-                    ? "video/*"
-                    : "audio/*"
+                  ? "video/*"
+                  : "audio/*"
               }
               onChange={(e) => setFile(e.target.files[0])}
               className="hidden"
@@ -158,10 +169,18 @@ export default function EditStory({ user }) {
         />
 
         <div className="flex gap-4 mt-4">
-          <button type="submit" className="px-4 py-2 bg-gray-900 text-white rounded" disabled={updating}>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-gray-900 text-white rounded"
+            disabled={updating}
+          >
             {updating ? "Updating..." : "Update"}
           </button>
-          <button type="button" className="px-4 py-2 bg-gray-300 rounded" onClick={() => navigate("/timeline")}>
+          <button
+            type="button"
+            className="px-4 py-2 bg-gray-300 rounded"
+            onClick={() => navigate("/timeline")}
+          >
             Cancel
           </button>
         </div>

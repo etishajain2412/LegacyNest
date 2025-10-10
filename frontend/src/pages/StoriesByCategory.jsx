@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axiosInstance from "../utils/axiosInstance"; // ✅ import axios instance
 
 export default function StoriesByCategory() {
   const [stories, setStories] = useState([]);
@@ -7,42 +8,27 @@ export default function StoriesByCategory() {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
-useEffect(() => {
-  async function fetchStories() {
-    try {
-      setLoading(true);
+  // ---------------- Fetch Stories ----------------
+  useEffect(() => {
+    async function fetchStories() {
+      try {
+        setLoading(true);
+        const { data } = await axiosInstance.get("/stories");
 
-      const token = localStorage.getItem("token");
-
-      const res = await fetch("http://localhost:5000/api/stories", {
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`, 
-        },
-        credentials: "include", 
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.message || "Failed to fetch stories");
+        if (data.success) setStories(data.stories);
+        else alert("Failed to fetch stories");
+      } catch (err) {
+        console.error("Error fetching stories:", err);
+        alert("Error fetching stories");
+      } finally {
+        setLoading(false);
       }
-
-      const data = await res.json();
-      if (data.success) setStories(data.stories);
-      else alert("Failed to fetch stories");
-    } catch (err) {
-      console.error(err);
-      alert("Error fetching stories");
-    } finally {
-      setLoading(false);
     }
-  }
 
-  fetchStories();
-}, []);
+    fetchStories();
+  }, []);
 
-
-  // Group by category
+  // ---------------- Categorize Stories ----------------
   const categorizedStories = stories.reduce((acc, story) => {
     const category = story.aiAnalysis?.category || "Uncategorized";
     if (!acc[category]) acc[category] = [];
@@ -50,13 +36,15 @@ useEffect(() => {
     return acc;
   }, {});
 
-  // Filter based on search
+  // ---------------- Filter by Search ----------------
   const filteredStories = Object.keys(categorizedStories).reduce((acc, category) => {
     const filtered = categorizedStories[category].filter(
       (story) =>
         story.title.toLowerCase().includes(search.toLowerCase()) ||
         story.content?.toLowerCase().includes(search.toLowerCase()) ||
-        story.aiAnalysis?.tags?.some((tag) => tag.toLowerCase().includes(search.toLowerCase()))
+        story.aiAnalysis?.tags?.some((tag) =>
+          tag.toLowerCase().includes(search.toLowerCase())
+        )
     );
     if (filtered.length > 0) acc[category] = filtered;
     return acc;
@@ -66,7 +54,9 @@ useEffect(() => {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10">
-      <h1 className="text-3xl font-bold mb-6 text-center font-serif">Family Stories</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center font-serif">
+        Family Stories
+      </h1>
 
       <input
         type="text"
@@ -82,8 +72,8 @@ useEffect(() => {
 
       {Object.entries(filteredStories).map(([category, storiesInCategory]) => (
         <div key={category} className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 ">Category: {category}</h2>
-          <div className="grid md:grid-cols-2 gap-6 ">
+          <h2 className="text-xl font-semibold mb-4">Category: {category}</h2>
+          <div className="grid md:grid-cols-2 gap-6">
             {storiesInCategory.map((story) => (
               <div
                 key={story._id}
@@ -93,13 +83,19 @@ useEffect(() => {
               >
                 <div>
                   <h3 className="text-xl font-bold mb-1 truncate">{story.title}</h3>
-                  <p className="text-gray-500 mb-2 text-sm truncate">By {story.userId?.name || "Unknown"}</p>
+                  <p className="text-gray-500 mb-2 text-sm truncate">
+                    By {story.userId?.name || "Unknown"}
+                  </p>
 
                   {story.mediaType === "text" && (
-                    <p className="text-gray-700 mb-2 overflow-hidden text-ellipsis" style={{ maxHeight: "100px" }}>
+                    <p
+                      className="text-gray-700 mb-2 overflow-hidden text-ellipsis"
+                      style={{ maxHeight: "100px" }}
+                    >
                       {story.content}
                     </p>
                   )}
+
                   {story.mediaType === "photo" && story.mediaUrl && (
                     <img
                       src={story.mediaUrl}
@@ -107,11 +103,13 @@ useEffect(() => {
                       className="rounded-xl w-full max-h-32 object-cover mb-2"
                     />
                   )}
+
                   {story.mediaType === "video" && story.mediaUrl && (
                     <video controls className="w-full rounded-xl max-h-32 mb-2">
                       <source src={story.mediaUrl} type="video/mp4" />
                     </video>
                   )}
+
                   {story.mediaType === "audio" && story.mediaUrl && (
                     <audio controls className="w-full mb-2">
                       <source src={story.mediaUrl} type="audio/mpeg" />
@@ -122,7 +120,10 @@ useEffect(() => {
                 {story.aiAnalysis?.tags?.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {story.aiAnalysis.tags.map((tag, i) => (
-                      <span key={i} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                      <span
+                        key={i}
+                        className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+                      >
                         #{tag}
                       </span>
                     ))}

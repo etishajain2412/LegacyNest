@@ -8,7 +8,6 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import BackButton from "./components/Back";
 import Profile from "./pages/Profile";
-import Dashboard from "./pages/Dashboard";
 import Stories from "./pages/Stories";
 import FamilyCircles from "./pages/FamilyCircles";
 import FeedPage from "./pages/FeedPage";
@@ -87,14 +86,6 @@ export default function App() {
           element={
             <ProtectedRoute user={user}>
               <Timeline user={user} />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute user={user}>
-              <Dashboard user={user} setUser={setUser} />
             </ProtectedRoute>
           }
         />

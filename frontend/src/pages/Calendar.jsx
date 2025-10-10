@@ -8,13 +8,18 @@ export default function CalendarPage({ user }) {
   const [pinnedEvents, setPinnedEvents] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
+  const API_URL =
+    import.meta.env.VITE_MODE === "production"
+      ? import.meta.env.VITE_BACKEND_URL
+      : "http://localhost:5000";
+
   useEffect(() => {
-    if (user && user._id) fetchEvents();
+    if (user && (user._id || user.id)) fetchEvents();
   }, [user]);
 
   const fetchEvents = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/calendar/${user.id}`);
+      const res = await fetch(`${API_URL}/api/calendar/${user._id || user.id}`);
       const data = await res.json();
       if (data.success) setPinnedEvents(data.events);
     } catch (err) {
@@ -33,31 +38,27 @@ export default function CalendarPage({ user }) {
 
   const handlePin = async () => {
     if (!selectedDate || !message.trim()) return;
-
     const newEvent = {
-      userId: user.id,
+      userId: user._id || user.id,
       date: selectedDate.toDateString(),
       message,
       visibility,
     };
-    console.log("Saving event:", newEvent);
-
     try {
       let res;
       if (editingId) {
-        res = await fetch(`http://localhost:5000/api/calendar/${editingId}`, {
+        res = await fetch(`${API_URL}/api/calendar/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newEvent),
         });
       } else {
-        res = await fetch("http://localhost:5000/api/calendar", {
+        res = await fetch(`${API_URL}/api/calendar`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newEvent),
         });
       }
-
       const data = await res.json();
       if (data.success) {
         fetchEvents();
@@ -72,7 +73,7 @@ export default function CalendarPage({ user }) {
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/calendar/${id}`, {
+      const res = await fetch(`${API_URL}/api/calendar/${id}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -129,7 +130,7 @@ export default function CalendarPage({ user }) {
               >
                 <span className="font-semibold">{day}</span>
                 {events.map((e) => (
-                  <span key={e._id} className="text-xs mt-1 px-1 py-0.5  bg-yellow-300 text-black">
+                  <span key={e._id} className="text-xs mt-1 px-1 py-0.5 bg-yellow-300 text-black">
                     {e.message.length > 12 ? e.message.slice(0, 12) + "..." : e.message}
                   </span>
                 ))}

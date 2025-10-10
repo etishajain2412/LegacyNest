@@ -3,7 +3,17 @@ import io from "socket.io-client";
 import axiosInstance from "../utils/axiosInstance";
 import { Users, Loader2, PlusCircle, XCircle, Save } from "lucide-react";
 
-const socket = io("http://localhost:5000", { withCredentials: true });
+// Determine backend URL dynamically
+const BACKEND_URL =
+  import.meta.env.MODE === "development"
+    ? "http://localhost:5000"
+    : import.meta.env.VITE_BACKEND_URL;
+
+// Initialize socket connection
+const socket = io(BACKEND_URL, {
+  withCredentials: true,
+  transports: ["websocket"],
+});
 
 export default function FamilyRoom({ user }) {
   const [families, setFamilies] = useState([]);
