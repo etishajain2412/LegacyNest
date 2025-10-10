@@ -1,5 +1,5 @@
 const CollaborativeStory = require("../models/CollaborativeStory");
-const FamilyCircle = require("../models/familyCircle");
+const FamilyCircle = require("../models/FamilyCircle");
 
 exports.createCollaborativeStory = async (req, res) => {
   try {
