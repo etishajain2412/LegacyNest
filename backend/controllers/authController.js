@@ -16,32 +16,52 @@ const generateTokens = (userId) => {
 // ----------------- SET COOKIES -----------------
 const setCookies = (res, accessToken, refreshToken, userData) => {
   const isProd = process.env.NODE_ENV === "production";
-  const cookieDomain = isProd ? ".vercel.app" : undefined;
+  
+  // For Vercel, we need to handle both custom domains and .vercel.app
+  const getCookieDomain = () => {
+    if (!isProd) return undefined; // localhost
+    
+    // If you have a custom domain, use it without www
+    const customDomain = process.env.PRODUCTION_DOMAIN; // e.g., "yourapp.com"
+    if (customDomain) {
+      return `.${customDomain}`; // leading dot for subdomains
+    }
+    
+    // Fallback for .vercel.app deployment
+    return ".vercel.app";
+  };
+
+  const cookieDomain = getCookieDomain();
+  const sameSite = isProd ? "none" : "lax"; // "none" for cross-site
+  const secure = isProd; // true in production
 
   // Access Token (HTTP-only)
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
+    secure,
+    sameSite,
     domain: cookieDomain,
     maxAge: 15 * 60 * 1000,
+    path: "/",
   });
 
   // Refresh Token (HTTP-only)
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
+    secure,
+    sameSite,
     domain: cookieDomain,
     maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
   });
 
   // User Data (accessible to frontend)
   res.cookie("user", JSON.stringify(userData), {
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
+    secure,
+    sameSite,
     domain: cookieDomain,
     maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
   });
 };
 
@@ -157,12 +177,15 @@ const refreshAccessToken = async (req, res) => {
     });
 
     const isProd = process.env.NODE_ENV === "production";
+    const cookieDomain = isProd ? (process.env.PRODUCTION_DOMAIN ? `.${process.env.PRODUCTION_DOMAIN}` : ".vercel.app") : undefined;
+    
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? "none" : "lax",
-      domain: isProd ? ".vercel.app" : undefined,
+      domain: cookieDomain,
       maxAge: 15 * 60 * 1000,
+      path: "/",
     });
 
     res.json({ message: "Token refreshed" });
@@ -182,11 +205,16 @@ const logout = async (req, res) => {
     }
 
     const isProd = process.env.NODE_ENV === "production";
-    const cookieDomain = isProd ? ".vercel.app" : undefined;
+    const cookieDomain = isProd ? (process.env.PRODUCTION_DOMAIN ? `.${process.env.PRODUCTION_DOMAIN}` : ".vercel.app") : undefined;
 
-    res.clearCookie("accessToken", { domain: cookieDomain });
-    res.clearCookie("refreshToken", { domain: cookieDomain });
-    res.clearCookie("user", { domain: cookieDomain });
+    const clearOptions = {
+      domain: cookieDomain,
+      path: "/",
+    };
+
+    res.clearCookie("accessToken", clearOptions);
+    res.clearCookie("refreshToken", clearOptions);
+    res.clearCookie("user", clearOptions);
 
     res.json({ message: "Logged out successfully" });
   } catch (err) {

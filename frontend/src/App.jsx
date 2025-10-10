@@ -23,6 +23,7 @@ import StoryReport from "./pages/StoryReport";
 import StoriesByCategory from "./pages/StoriesByCategory";
 
 function ProtectedRoute({ user, children }) {
+  console.log(user);
   if (!user) {
     return <Navigate to="/login" replace />;
   }
