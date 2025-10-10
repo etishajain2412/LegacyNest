@@ -132,7 +132,7 @@ export default function FamilyRoom({ user }) {
     <div className="flex h-screen">
       {/* Sidebar */}
       <div className="w-64 bg-gray-100 border-r p-4 overflow-y-auto">
-        <h2 className="text-lg font-semibold mb-4">Family Circles</h2>
+        <h2 className="text-2xl font-semibold mb-4 mt-12 font-serif">Family Circles</h2>
         {families.map((family) => (
           <div
             key={family._id}
@@ -194,7 +194,7 @@ export default function FamilyRoom({ user }) {
             {stories.length === 0 ? (
               <p>No stories yet.</p>
             ) : (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-4 ">
                 {stories.map((story) => (
                   <div
                     key={story._id}
@@ -206,7 +206,7 @@ export default function FamilyRoom({ user }) {
                         userName: user.name,
                       });
                     }}
-                    className="bg-white p-4 rounded-xl shadow cursor-pointer hover:shadow-md"
+                    className="bg-white p-4 rounded-xl shadow cursor-pointer hover:shadow-md border-black border-2"
                   >
                     <h3 className="font-semibold text-lg">{story.title}</h3>
                     <p className="text-sm text-gray-500">

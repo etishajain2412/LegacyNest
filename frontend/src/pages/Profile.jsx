@@ -147,7 +147,7 @@ const Profile = ({ user, setUser }) => {
                     Account Settings
                   </h3>
 
-                  <div className="bg-gray-50 p-4 rounded-lg border-1 border-2 border-black">
+                  <div className="bg-gray-50 p-4 rounded-lg  border-2 border-black">
                     {!editName ? (
                       <div className="flex justify-between items-center ">
                         <div>
