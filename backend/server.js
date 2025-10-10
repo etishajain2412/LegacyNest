@@ -33,22 +33,27 @@ app.use(cookieParser());
 app.use(passport.initialize());
 
 app.use(cors({
-  origin:  ["http://localhost:3000"],
+  origin: [
+    "https://legacy-nest.vercel.app", // your Vercel frontend
+    "http://localhost:3000"           // still keep localhost for local testing
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
-
 // Create HTTP server
 const server = http.createServer(app);
 
-// Attach Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:3000',
+    origin: [
+      "https://legacy-nest.vercel.app",
+      "http://localhost:3000"
+    ],
     methods: ['GET', 'POST', 'PUT'],
     credentials: true,
   },
 });
+
 
 // Set IO globally
 setIo(io);

@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import FrontPage from "./pages/frontpage";
+import FrontPage from "./pages/FrontPage";
 import Upload from "./pages/Upload";
 import Timeline from "./pages/Timeline";
 import ViewStory from "./pages/ViewStory";
