@@ -1,11 +1,12 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/user.js');
+const User = require('../models/User.js');
 
 const authenticateToken = async (req, res, next) => {
   try {
     const token = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
 
     if (!token) {
+      
       return res.status(401).json({ message: 'Access token required' });
     }
 

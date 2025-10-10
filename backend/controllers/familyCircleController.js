@@ -1,5 +1,5 @@
 const FamilyCircle = require("../models/familyCircle");
-const User = require("../models/user");
+const User = require("../models/User");
 
 exports.createFamilyCircle = async (req, res) => {
   try {
