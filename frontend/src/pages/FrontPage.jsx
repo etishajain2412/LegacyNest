@@ -146,8 +146,11 @@ function FrontPage({ user, setUser }) {
                 <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={()=>navigate("/circles")}>
                   Circles
                 </p>
+                <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={()=>navigate("/familychatbot")}>
+                  Family Chatbot
+                </p>
                 <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={()=>navigate("/familyroom")}>
-                  FamilyRoom
+                  Family Room
                 </p>
                 <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={handleLogout}>
                   Logout
