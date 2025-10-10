@@ -1,5 +1,5 @@
 const FamilyCircle = require("../models/familyCircle");
-const User = require("../models/user");
+const User = require("../models/User");
 
 exports.createFamilyCircle = async (req, res) => {
   try {
@@ -715,6 +715,26 @@ exports.getUserPendingRequests = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching user pending requests:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+// Get all family circles where the user is a member
+exports.getUserFamilyCircles = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Find circles where the user is a member or creator
+    const circles = await FamilyCircle.find({
+      isActive: true,
+      $or: [
+        { createdBy: userId },
+        { "members.user": userId }
+      ],
+    }).select("_id name description");
+
+    res.json(circles);
+  } catch (error) {
+    console.error("Error fetching user family circles:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

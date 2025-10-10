@@ -2,6 +2,7 @@
 const express = require("express");
 const { authenticateToken } = require("../middlewares/authMiddleware");
 const promptController = require("../controllers/promptController");
+//const { sharePrompt } = require("../controllers/promptController");
 
 const router = express.Router();
 
@@ -19,5 +20,9 @@ router.post("/instances/:id/skip", authenticateToken, promptController.skipPromp
 
 // ✅ Optional: force deliver now (for testing)
 //router.post("/instances/:id/deliver-now", authenticateToken, promptController.triggerDeliverNow);
+
+
+//router.post("/instances/:id/share", authenticateToken, promptController.sharePrompt);
+
 
 module.exports = router;

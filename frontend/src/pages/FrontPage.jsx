@@ -136,6 +136,12 @@ function FrontPage({ user, setUser }) {
                 >
                   Matches
                 </p>
+                <p
+                  className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
+                  onClick={() => navigate("/familyfeed")}
+                >
+                  Family Feed
+                </p>
                                 <p
                   className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
                   onClick={() => navigate("/feed")}

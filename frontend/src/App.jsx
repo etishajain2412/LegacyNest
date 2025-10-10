@@ -16,6 +16,7 @@ import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import PromptsPage from "./pages/PromptsPage"; 
 import MatchesPage from "./pages/MatchesPage";
+import FamilyFeed from "./pages/FamilyFeed";
 
 import FamilyRoom from "./pages/FamilyRoom";
 
@@ -186,6 +187,14 @@ export default function App() {
           element={
             <ProtectedRoute user={user}>
               <MatchesPage user={user} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/familyfeed"
+          element={
+            <ProtectedRoute user={user}>
+              <FamilyFeed user={user} />
             </ProtectedRoute>
           }
         />

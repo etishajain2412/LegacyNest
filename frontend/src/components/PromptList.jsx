@@ -3,7 +3,7 @@ import { fetchPrompts, createDynamicPrompt } from "../api/prompts";
 import PromptItem from "./PromptItem";
 import socket from "../utils/socket";
 
-const PromptList = () => {
+const PromptList = ({ familyId }) => {
   const [prompts, setPrompts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -100,7 +100,7 @@ const PromptList = () => {
         <p>No prompts yet</p>
       ) : (
         prompts.map((p) => (
-          <PromptItem key={p._id} prompt={p} onRespond={handleRespond} onSkip={handleSkip} />
+          <PromptItem key={p._id} prompt={p} onRespond={handleRespond} onSkip={handleSkip} familyId={familyId}/>
         ))
       )}
     </div>

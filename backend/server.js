@@ -116,9 +116,11 @@ const jwt = require('jsonwebtoken');
 const authRoutes = require('./routes/authRoutes');
 const storyRoutes = require('./routes/storyRoutes.js');
 const profileRoutes = require('./routes/profileRoutes.js');
-const promptRoutes = require('./routes/promptRoutes');
+
 const matchRoutes = require('./routes/matchRoutes'); 
 
+const promptRoutes = require("./routes/promptRoutes");
+const sharedPromptsRoutes = require("./routes/sharedPromptRoutes.js");
 
 
 const { setIo, register, unregisterBySocket } = require("./utils/socketManager");
@@ -215,13 +217,21 @@ io.on("connection", (socket) => {
 });
 
 // 🧩 Routes
+
 app.use("/api/auth", authRoutes);
 app.use("/api/stories", storyRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/circles", familyCircleRoutes);
-app.use("/api/prompts", promptRoutes);
+
 app.use("/api/calendar", calendarRoutes);
 app.use('/api/matches', matchRoutes); 
+
+
+
+app.use("/api/prompts", promptRoutes);
+app.use("/api/prompts", sharedPromptsRoutes); // same base so frontend path matches
+
+
 
 
 

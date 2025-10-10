@@ -3,10 +3,15 @@ const router = express.Router();
 const familyCircleController = require("../controllers/familyCircleController");
 const { authenticateToken } = require("../middlewares/authMiddleware");
 
+
+
+
 router.use(authenticateToken);
 
 // Create circle
 router.post("/create", familyCircleController.createFamilyCircle);
+
+router.get("/my", authenticateToken, familyCircleController.getUserFamilyCircles);
 
 // Get user's circles
 router.get("/my-circles", familyCircleController.getUserCircles);
@@ -36,5 +41,7 @@ router.put("/:id/member-role", familyCircleController.updateMemberRole);
 router.get("/admin/pending-requests", familyCircleController.getAdminPendingRequests);
 router.get("/user/pending-requests", familyCircleController.getUserPendingRequests);
 router.post("/cancel-request", familyCircleController.cancelJoinRequest);
+
+router.get("/my", authenticateToken, familyCircleController.getUserFamilyCircles);
 
 module.exports = router;
