@@ -21,8 +21,9 @@ const profileRoutes = require("./routes/profileRoutes");
 const familyCircleRoutes = require("./routes/familyCircleRoutes");
 const calendarRoutes = require("./routes/calendarRoutes");
 const collaborativeStoryRoutes = require("./routes/collaborativeStoryRoutes");
-const promptRoutes=require("./routes/promptRoutes")
-const matchRoutes=require("./routes/matchRoutes")
+const promptRoutes = require("./routes/promptRoutes");
+const matchRoutes = require("./routes/matchRoutes");
+
 dotenv.config();
 connectDB();
 
@@ -32,28 +33,25 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(passport.initialize());
 
+// Allow ALL origins for Express
 app.use(cors({
-  origin: [
-    "https://legacy-nest.vercel.app", // your Vercel frontend
-    "http://localhost:3000"           // still keep localhost for local testing
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: true, // Allow all origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
 }));
+
 // Create HTTP server
 const server = http.createServer(app);
 
+// Allow ALL origins for Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: [
-      "https://legacy-nest.vercel.app",
-      "http://localhost:3000"
-    ],
-    methods: ['GET', 'POST', 'PUT'],
+    origin: "*", // Allow all origins for Socket.IO
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
   },
 });
-
 
 // Set IO globally
 setIo(io);
@@ -139,9 +137,7 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/circles", familyCircleRoutes);
 app.use("/api/prompts", promptRoutes);
 app.use("/api/calendar", calendarRoutes);
-app.use('/api/matches', matchRoutes); 
-
-
+app.use('/api/matches', matchRoutes);
 app.use("/api/collab-stories", collaborativeStoryRoutes);
 
 // Root Route

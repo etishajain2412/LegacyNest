@@ -18,6 +18,11 @@ const generateTokens = (userId) => {
   return { accessToken, refreshToken };
 };
 
+// Get frontend URL based on environment
+const getFrontendUrl = () => {
+  return process.env.FRONTEND_URL || 'http://localhost:3000';
+};
+
 const register = async (req, res) => {
   try {
     const { name, username, email, password } = req.body;
@@ -45,14 +50,14 @@ const register = async (req, res) => {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 48 * 60 * 60 * 1000,
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -101,14 +106,14 @@ const login = async (req, res) => {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 48 * 60 * 60 * 1000,
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -158,7 +163,7 @@ const refreshAccessToken = async (req, res) => {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 48 * 60 * 60 * 1000,
     });
 
@@ -185,16 +190,23 @@ const refreshAccessToken = async (req, res) => {
 const googleCallback = async (req, res) => {
   try {
     const user = req.user;
+    const frontendUrl = getFrontendUrl();
 
     if (!user) {
       const errorMessage = req.authInfo?.message || 'Authentication failed';
+      const state = req.query.state || 'login';
+      
+      let redirectPath = '/login';
+      if (state === 'register') {
+        redirectPath = '/register';
+      }
       
       if (errorMessage.includes('Please login instead')) {
-        return res.redirect("http://localhost:3000/login?error=Account already exists. Please login instead.");
+        return res.redirect(`${frontendUrl}${redirectPath}?error=Account already exists. Please login instead.`);
       } else if (errorMessage.includes('Please register first')) {
-        return res.redirect("http://localhost:3000/register?error=No account found. Please register first.");
+        return res.redirect(`${frontendUrl}${redirectPath}?error=No account found. Please register first.`);
       } else {
-        return res.redirect(`http://localhost:3000/login?error=${encodeURIComponent(errorMessage)}`);
+        return res.redirect(`${frontendUrl}${redirectPath}?error=${encodeURIComponent(errorMessage)}`);
       }
     }
 
@@ -205,14 +217,14 @@ const googleCallback = async (req, res) => {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 48 * 60 * 60 * 1000,
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -225,14 +237,23 @@ const googleCallback = async (req, res) => {
     
     res.cookie('user', JSON.stringify(userData), {
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 48 * 60 * 60 * 1000,
     });
 
-    res.redirect("http://localhost:3000/profile");
+    // Redirect based on the original state (login or register flow)
+    const state = req.query.state || 'login';
+    let redirectPath = '/profile';
+    
+    if (state === 'register') {
+      redirectPath = '/onboarding'; // or wherever you want new users to go
+    }
+
+    res.redirect(`${frontendUrl}${redirectPath}`);
 
   } catch (error) {
-    res.redirect("http://localhost:3000/login?error=Server error during authentication.");
+    const frontendUrl = getFrontendUrl();
+    res.redirect(`${frontendUrl}/login?error=Server error during authentication.`);
   }
 };
 
@@ -249,6 +270,7 @@ const logout = async (req, res) => {
 
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
+    res.clearCookie('user');
 
     res.status(200).json({ message: 'Logged out successfully' });
 
