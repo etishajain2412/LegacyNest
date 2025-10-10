@@ -1,12 +1,12 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User.js');
-
+const {getFrontendUrl} =require('../utils/getFrontendUrl.js')
 const generateTokens = (userId) => {
   const accessToken = jwt.sign(
     { id: userId }, 
     process.env.JWT_ACCESS_SECRET, 
-    { expiresIn: '48h' }
+    { expiresIn: '15m' }
   );
   
   const refreshToken = jwt.sign(
@@ -16,11 +16,6 @@ const generateTokens = (userId) => {
   );
   
   return { accessToken, refreshToken };
-};
-
-// Get frontend URL based on environment
-const getFrontendUrl = () => {
-  return process.env.FRONTEND_URL || 'http://localhost:3000';
 };
 
 const register = async (req, res) => {
@@ -50,14 +45,14 @@ const register = async (req, res) => {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 48 * 60 * 60 * 1000,
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -106,14 +101,14 @@ const login = async (req, res) => {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 48 * 60 * 60 * 1000,
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -157,14 +152,14 @@ const refreshAccessToken = async (req, res) => {
     const accessToken = jwt.sign(
       { id: user._id }, 
       process.env.JWT_ACCESS_SECRET, 
-      { expiresIn: '48h' }
+      { expiresIn: '15m' }
     );
 
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 48 * 60 * 60 * 1000,
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
     });
 
     res.json({ 
@@ -189,42 +184,35 @@ const refreshAccessToken = async (req, res) => {
 
 const googleCallback = async (req, res) => {
   try {
+    const frontendUrl = getFrontendUrl(req);
     const user = req.user;
-    const frontendUrl = getFrontendUrl();
 
     if (!user) {
       const errorMessage = req.authInfo?.message || 'Authentication failed';
-      const state = req.query.state || 'login';
-      
-      let redirectPath = '/login';
-      if (state === 'register') {
-        redirectPath = '/register';
-      }
-      
+
       if (errorMessage.includes('Please login instead')) {
-        return res.redirect(`${frontendUrl}${redirectPath}?error=Account already exists. Please login instead.`);
+        return res.redirect(`${frontendUrl}/login?error=Account already exists. Please login instead.`);
       } else if (errorMessage.includes('Please register first')) {
-        return res.redirect(`${frontendUrl}${redirectPath}?error=No account found. Please register first.`);
+        return res.redirect(`${frontendUrl}/register?error=No account found. Please register first.`);
       } else {
-        return res.redirect(`${frontendUrl}${redirectPath}?error=${encodeURIComponent(errorMessage)}`);
+        return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(errorMessage)}`);
       }
     }
 
     const { accessToken, refreshToken } = generateTokens(user._id);
-
     await User.findByIdAndUpdate(user._id, { refreshToken });
 
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 48 * 60 * 60 * 1000,
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -234,25 +222,16 @@ const googleCallback = async (req, res) => {
       username: user.username,
       email: user.email
     };
-    
+
     res.cookie('user', JSON.stringify(userData), {
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 48 * 60 * 60 * 1000,
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
     });
 
-    // Redirect based on the original state (login or register flow)
-    const state = req.query.state || 'login';
-    let redirectPath = '/profile';
-    
-    if (state === 'register') {
-      redirectPath = '/onboarding'; // or wherever you want new users to go
-    }
-
-    res.redirect(`${frontendUrl}${redirectPath}`);
-
+    res.redirect(`${frontendUrl}/profile`);
   } catch (error) {
-    const frontendUrl = getFrontendUrl();
+    const frontendUrl = getFrontendUrl(req);
     res.redirect(`${frontendUrl}/login?error=Server error during authentication.`);
   }
 };
@@ -270,7 +249,6 @@ const logout = async (req, res) => {
 
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
-    res.clearCookie('user');
 
     res.status(200).json({ message: 'Logged out successfully' });
 
@@ -284,5 +262,5 @@ module.exports = {
   login,
   refreshAccessToken,
   googleCallback,
-  logout
+  logout
 };

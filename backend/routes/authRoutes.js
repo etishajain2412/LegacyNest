@@ -10,11 +10,6 @@ const {
 
 const router = express.Router();
 
-// Get frontend URL based on environment
-const getFrontendUrl = () => {
-  return process.env.FRONTEND_URL || 'http://localhost:3000';
-};
-
 router.post('/register', register);
 router.post('/login', login);
 router.post('/refresh-token', refreshAccessToken);
@@ -30,13 +25,12 @@ router.get("/google", (req, res, next) => {
 
 router.get("/google/callback", 
   (req, res, next) => {
-    const frontendUrl = getFrontendUrl();
     passport.authenticate("google", { 
       session: false, 
-      failureRedirect: `${frontendUrl}/login?error=Authentication failed`
+      failureRedirect: "http://localhost:3000/login?error=Authentication failed"
     })(req, res, next);
   }, 
   googleCallback
 );
 
-module.exports = router;
+module.exports = router;
