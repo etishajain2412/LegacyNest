@@ -15,7 +15,7 @@ import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import PromptsPage from "./pages/PromptsPage"; 
 import MatchesPage from "./pages/MatchesPage";
-
+import FamilyChatbot from "./pages/FamilyChatbot";
 import FamilyRoom from "./pages/FamilyRoom";
 
 import CalendarPage from "./pages/Calendar";
@@ -114,6 +114,15 @@ export default function App() {
   element={
     <ProtectedRoute user={user}>
       <FamilyRoom user={user} />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/familychatbot"
+  element={
+    <ProtectedRoute user={user}>
+      <FamilyChatbot user={user} />
     </ProtectedRoute>
   }
 />

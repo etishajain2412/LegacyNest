@@ -47,4 +47,6 @@ familyCircleSchema.index({ createdBy: 1 });
 familyCircleSchema.index({ "members.user": 1 });
 familyCircleSchema.index({ "joinRequests.user": 1 });
 
-module.exports = mongoose.models.FamilyCircle || mongoose.model("FamilyCircle", familyCircleSchema);
+module.exports =
+  mongoose.models.FamilyCircle ||
+  mongoose.model("FamilyCircle", familyCircleSchema);

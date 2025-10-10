@@ -21,8 +21,9 @@ const profileRoutes = require("./routes/profileRoutes");
 const familyCircleRoutes = require("./routes/familyCircleRoutes");
 const calendarRoutes = require("./routes/calendarRoutes");
 const collaborativeStoryRoutes = require("./routes/collaborativeStoryRoutes");
-const promptRoutes = require("./routes/promptRoutes");
-const matchRoutes = require("./routes/matchRoutes");
+const promptRoutes=require("./routes/promptRoutes")
+const matchRoutes=require("./routes/matchRoutes")
+const familyChatbotRoutes = require("./routes/familyChatbot");
 
 dotenv.config();
 connectDB();
@@ -137,7 +138,10 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/circles", familyCircleRoutes);
 app.use("/api/prompts", promptRoutes);
 app.use("/api/calendar", calendarRoutes);
-app.use('/api/matches', matchRoutes);
+app.use('/api/matches', matchRoutes); 
+app.use("/api/chatbot", familyChatbotRoutes);
+
+
 app.use("/api/collab-stories", collaborativeStoryRoutes);
 
 // Root Route
