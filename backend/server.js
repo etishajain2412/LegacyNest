@@ -36,7 +36,10 @@ app.use(passport.initialize());
 
 // Allow ALL origins for Express
 app.use(cors({
-  origin: true, // Allow all origins
+    origin: [
+    "http://localhost:3000",
+    "https://legacy-nest.vercel.app",
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
@@ -48,7 +51,10 @@ const server = http.createServer(app);
 // Allow ALL origins for Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow all origins for Socket.IO
+    origin: [
+    "http://localhost:3000",
+    "https://legacy-nest.vercel.app",
+  ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
   },
