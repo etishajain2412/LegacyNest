@@ -1,5 +1,4 @@
-// utils/socketManager.js
-// Lightweight map between userId (string) and socketId (string)
+
 const online = new Map();
 let ioInstance = null;
 

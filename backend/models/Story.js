@@ -23,9 +23,8 @@ const StorySchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   sharedPromptId: { type: mongoose.Schema.Types.ObjectId, ref: "SharedPrompt", default: null },
 
-  // 🧠 Added fields for AI + Matching (non-destructive)
   summary: { type: String, default: "" },        // auto-generated summary
-  transcript: { type: String, default: "" },     // for audio/video content
+  transcript: { type: String, default: "" },     
   embedding: { type: [Number], default: [] },    // vector representation
   vectorMetadata: { type: mongoose.Schema.Types.Mixed, default: {} }, // metadata for local vector DB
   mediaType: {

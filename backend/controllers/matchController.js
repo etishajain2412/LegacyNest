@@ -1,10 +1,10 @@
-// src/controllers/matchController.js
+
 const Story = require("../models/Story");
 const User = require("../models/User");
 const { createEmbedding } = require("../services/ai");
-const vectorClient = require("../services/vectorClientLocal"); // local vector search client
+const vectorClient = require("../services/vectorClientLocal"); 
 
-/** small helper: cosine similarity between two vectors */
+//it finds the cosine similarity between two vectors 
 function cosine(a, b) {
   if (!a || !b || a.length !== b.length) return 0;
   let dot = 0, na = 0, nb = 0;
@@ -17,7 +17,7 @@ function cosine(a, b) {
   return dot / (Math.sqrt(na) * Math.sqrt(nb));
 }
 
-/** tokenize for overlap explanation */
+
 function tokenize(text) {
   return (text || "")
     .toLowerCase()
@@ -26,15 +26,12 @@ function tokenize(text) {
     .filter(Boolean);
 }
 
-/** pick top n matches by score */
+// pick top n matches from all the vectors by score 
 function topN(arr, n) {
   return arr.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, n);
 }
 
-/**
- * GET /api/matches/:userId
- * Offline cross-generational matching using local embeddings.
- */
+
 async function getCrossGenerationalMatches(req, res) {
   try {
     const { userId } = req.params;
@@ -44,13 +41,12 @@ async function getCrossGenerationalMatches(req, res) {
     if (!user) return res.status(404).json({ ok: false, message: "User not found" });
     const userBirth = user.birthYear || null;
 
-    // 1️⃣ Get user stories
     const userStories = await Story.find({ userId }).lean();
     if (!userStories || userStories.length === 0) {
       return res.json({ ok: true, matches: [] });
     }
 
-    // 2️⃣ Ensure embeddings exist
+    // Ensuring embeddings exist
     const storyEmbeddings = [];
     for (const s of userStories) {
       let emb = s.embedding;
@@ -73,7 +69,7 @@ async function getCrossGenerationalMatches(req, res) {
       return res.json({ ok: true, matches: [] });
     }
 
-    // 3️⃣ Create centroid of user's story embeddings
+    // Creating centroid of user's story embeddings
     const dim = storyEmbeddings[0].emb.length;
     const centroid = new Array(dim).fill(0);
     for (const it of storyEmbeddings) {
@@ -81,12 +77,12 @@ async function getCrossGenerationalMatches(req, res) {
     }
     for (let i = 0; i < dim; i++) centroid[i] /= storyEmbeddings.length;
 
-    // 4️⃣ Query local vector DB
+    //Query local vector DB
     const matchesFromLocal = await vectorClient.query("local-index", centroid, 150);
 
-    // 5️⃣ Filter candidates (remove same user, same generation, and low scores)
+    //Filter candidates (remove same user, same generation, and low scores)
     const MIN_VECTOR_SCORE = parseFloat(process.env.MATCH_MIN_SCORE || "0.12");
-    const MIN_FINAL_SCORE = parseFloat(process.env.MIN_FINAL_SCORE || "0.4"); // 🟢 only show >0.4
+    const MIN_FINAL_SCORE = parseFloat(process.env.MIN_FINAL_SCORE || "0.4"); 
 
     const candidatesRaw = [];
     const matchedUserIdSet = new Set();
@@ -110,24 +106,24 @@ async function getCrossGenerationalMatches(req, res) {
       return res.json({ ok: true, matches: [] });
     }
 
-    // 6️⃣ Batch fetch matched users & stories
+    //Batch fetch matched users & stories
     const matchedUsers = await User.find({ _id: { $in: [...matchedUserIdSet] } }).lean();
     const usersById = Object.fromEntries(matchedUsers.map(u => [String(u._id), u]));
     const matchedStories = await Story.find({ _id: { $in: [...matchedStoryIdSet] } }).lean();
     const storiesById = Object.fromEntries(matchedStories.map(s => [String(s._id), s]));
 
-    // 7️⃣ Build matches
+    //Building matches
     const results = [];
     for (const c of candidatesRaw) {
       const matchedUser = usersById[c.matchedUserId];
       const matchedStory = storiesById[c.matchedStoryId];
       if (!matchedUser || !matchedStory) continue;
 
-      // skip same generation
+      //skipping same generation
       const matchedBirth = matchedUser.birthYear || null;
       if (userBirth && matchedBirth && Math.abs(userBirth - matchedBirth) < 18) continue;
 
-      // compute similarity
+      //computing similarity
       const matchedEmb = matchedStory.embedding;
       if (!Array.isArray(matchedEmb)) continue;
 
@@ -140,7 +136,7 @@ async function getCrossGenerationalMatches(req, res) {
       // final score = weighted average of vector score & text similarity
       const finalScore = Math.max(c.score, best.sim);
 
-      if (finalScore < MIN_FINAL_SCORE) continue; // 🟢 filter weak matches here!
+      if (finalScore < MIN_FINAL_SCORE) continue; // filtering weak matches here!
 
       // Explanation builder
       const leftTags = (best.story && best.story.tags) || [];
@@ -189,7 +185,7 @@ async function getCrossGenerationalMatches(req, res) {
       });
     }
 
-    // 8️⃣ Sort and dedupe
+
     const deduped = [];
     const seen = new Set();
     for (const r of topN(results, 100)) {

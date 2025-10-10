@@ -129,7 +129,7 @@ const login = async (req, res) => {
   }
 };
 
-// ---------------- REFRESH TOKEN ----------------
+// REFRESH TOKEN 
 const refreshAccessToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;

@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
   },
-  // store birth year (e.g., 1998). optional
+  // store birth year 
   birthYear: {
     type: Number,
     min: 1900,

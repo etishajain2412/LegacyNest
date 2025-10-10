@@ -12,8 +12,8 @@ const API = axios.create({
  */
 export const fetchMyCircles = async () => {
   try {
-    const { data } = await API.get("/circles/my"); // matches your backend route
-    return data; // could be { circles: [...] } or just [...]
+    const { data } = await API.get("/circles/my"); 
+    return data; 
   } catch (err) {
     console.error("Error fetching user circles:", err);
     throw err;

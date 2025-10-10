@@ -1,14 +1,12 @@
-// utils/promptGenerator.js
+
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// safe init
 let genAI = null;
 if (process.env.GEMINI_API_KEY) {
   genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 }
 console.log("Gemini API Key Loaded:", !!process.env.GEMINI_API_KEY);
 
-// fallback pool
 const FALLBACK_PROMPTS = [
   "What was your happiest childhood memory?",
   "Tell about a family tradition that means a lot to you.",
@@ -36,7 +34,7 @@ async function tryGenerateWithModel(modelName, systemPrompt) {
     }
     return null;
   } catch (err) {
-    // return null so caller can try next
+   
     console.warn(`Model ${modelName} failed: ${err?.message || err}`);
     return null;
   }
@@ -55,7 +53,7 @@ module.exports = async function generatePromptText(recentPrompts = []) {
     return pickFallback();
   }
 
-  // Build the instruction for the model
+
   const blockList = [...seen].slice(0, 40).map(t => `- "${t}"`).join("\n");
   const systemInstruction = `
 You are a friendly assistant that writes ONE short, warm memory prompt question for a family storytelling app.
@@ -67,16 +65,16 @@ ${blockList || "- none"}
 - Avoid generic filler like "Tell us a story about your family." Prefer something specific and evocative.
 `;
 
-  // Candidate model names (ordered prefered -> fallback). Update this list if Google docs show newer names.
+  
   const candidates = [
     "gemini-2.5-flash",
     "gemini-2.5-pro",
     "gemini-2.5-flash-001",
     "gemini-2.5-pro-001",
-    // lightweight alternatives or older legacy names (kept as last-resort tries)
+   
     "gemini-2.1",
     "gemini-2.0-flash",
-    "text-bison-001" // Vertex/text fallback
+    "text-bison-001" 
   ];
 
   for (const m of candidates) {

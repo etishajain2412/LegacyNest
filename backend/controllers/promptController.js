@@ -1,16 +1,14 @@
-// controllers/promptController.js
 const PromptInstance = require("../models/PromptInstance");
 const Story = require("../models/Story");
 const { getIo, getSocketId } = require("../utils/socketManager");
 const generatePromptText = require("../utils/promptGenerator");
 
-// ✅ Create a dynamic prompt immediately (on demand)
+
 exports.createDynamicPrompt = async (req, res) => {
   try {
-    const userId = req.user?.id; // require authenticated user
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Authentication required" });
 
-    // Fetch recent prompts for uniqueness
     const recentDocs = await PromptInstance.find({ userId })
       .sort({ sendAt: -1 })
       .limit(50)
@@ -18,11 +16,9 @@ exports.createDynamicPrompt = async (req, res) => {
 
     const recentTexts = recentDocs.map((d) => d.promptText || "");
 
-    // Generate a unique prompt (Gemini + fallback)
     const promptText = await generatePromptText(recentTexts);
     if (!promptText) throw new Error("Gemini prompt failed");
 
-    // Create instance
     const instance = await PromptInstance.create({
       userId,
       promptText,
@@ -48,7 +44,6 @@ exports.createDynamicPrompt = async (req, res) => {
   }
 };
 
-// ✅ Fetch all prompts for current user
 exports.getUserPromptInstances = async (req, res) => {
   try {
     const items = await PromptInstance.find({ userId: req.user.id })
@@ -61,8 +56,6 @@ exports.getUserPromptInstances = async (req, res) => {
   }
 };
 
-// ✅ Skip a prompt and generate a new one immediately
-// ✅ Skip a prompt (mark it as skipped, no new one generated)
 exports.skipPrompt = async (req, res) => {
   try {
     const { id } = req.params;
@@ -72,17 +65,14 @@ exports.skipPrompt = async (req, res) => {
       return res.status(404).json({ error: "Prompt not found" });
     }
 
-    // Make sure the prompt belongs to the logged-in user
     if (String(instance.userId) !== String(req.user.id)) {
       return res.status(403).json({ error: "Not your prompt" });
     }
 
-    // ✅ Mark it as skipped
     instance.status = "skipped";
     instance.skippedAt = new Date();
     await instance.save();
 
-    // Optionally notify the client in real time (so UI updates immediately)
     const io = getIo();
     const socketId = getSocketId(req.user.id);
     if (io && socketId) {
@@ -97,7 +87,6 @@ exports.skipPrompt = async (req, res) => {
 };
 
 
-// ✅ Respond to a prompt
 exports.respondToPrompt = async (req, res) => {
   try {
     const { text, mediaUrl, type } = req.body;
@@ -117,7 +106,6 @@ exports.respondToPrompt = async (req, res) => {
     instance.respondedAt = new Date();
     instance.status = "responded";
 
-    // Create a Story entry
     const story = await Story.create({
       userId: req.user.id,
       title: instance.promptText.slice(0, 120),
@@ -131,7 +119,6 @@ exports.respondToPrompt = async (req, res) => {
     instance.linkedStoryId = story._id;
     await instance.save();
 
-    // Notify client
     const io = getIo();
     const socketId = getSocketId(req.user.id);
     if (io && socketId) {

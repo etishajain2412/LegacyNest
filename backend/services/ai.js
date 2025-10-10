@@ -1,30 +1,28 @@
-// src/services/ai.js
-// 🧠 Local-only AI utilities: embeddings + simple summarizer
-// Handles multiple pipeline output shapes (arrays, nested arrays, objects with .data, typed arrays)
+
 
 const dotenv = require('dotenv');
 dotenv.config();
 
-const USE_LOCAL = process.env.USE_LOCAL_EMBEDDINGS !== 'false'; // true by default
+const USE_LOCAL = process.env.USE_LOCAL_EMBEDDINGS !== 'false'; 
 const MODEL_NAME = process.env.LOCAL_EMBEDDING_MODEL || 'Xenova/all-MiniLM-L6-v2';
 
 let _localPipeline = null;
 
-/** Lazy-load the local transformer pipeline for embeddings. */
+//Lazy-load the local transformer pipeline for embeddings. 
 async function initLocalPipeline() {
   if (_localPipeline) return _localPipeline;
   try {
     const { pipeline } = await require('@xenova/transformers');
     _localPipeline = await pipeline('feature-extraction', MODEL_NAME);
-    console.log('✅ Local embedding pipeline initialized:', MODEL_NAME);
+    console.log('Local embedding pipeline initialized:', MODEL_NAME);
     return _localPipeline;
   } catch (err) {
-    console.error('❌ Failed to initialize local embedding pipeline:', err?.message || err);
+    console.error('Failed to initialize local embedding pipeline:', err?.message || err);
     throw err;
   }
 }
 
-// --- Helper utilities for vector extraction ---
+// Helper utilities for vector extraction 
 function isNumberArray(val) {
   if (!val) return false;
   if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') return true;
@@ -56,12 +54,7 @@ function avgVectors(vecs) {
   return sum.map(x => x / count);
 }
 
-/**
- * If pipeline returns object with .data keyed by index, convert to numeric flat array.
- * Accepts:
- * - out.data as { "0": val, "1": val, ... }
- * - out.data as typed array or normal array
- */
+
 function extractFlatArrayFromDataField(dataField) {
   if (!dataField) return null;
   // typed array or array
@@ -251,20 +244,18 @@ async function createEmbedding(text, opts = {}) {
     }
 
     if (!emb) {
-      console.warn('⚠️ createEmbedding: pipeline returned unexpected shape.');
+      console.warn('createEmbedding: pipeline returned unexpected shape.');
       return null;
     }
 
     return Array.from(emb).map(Number);
   } catch (err) {
-    console.error('❌ Local embedding failed:', err?.message || err);
+    console.error('Local embedding failed:', err?.message || err);
     return null;
   }
 }
 
-/**
- * Simple local summarizer + tag extractor.
- */
+
 async function generateSummaryAndTags(text) {
   if (!text || !String(text).trim()) return { summary: '', tags: [] };
 

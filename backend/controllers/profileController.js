@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 
 const getProfile = async (req, res) => {
   try {
-    // exclude sensitive fields; virtual 'age' will be included in the returned object
+    
     const user = await User.findById(req.user.id).select('-password -refreshToken');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -16,10 +16,7 @@ const getProfile = async (req, res) => {
   }
 };
 
-/**
- * Update profile (name and/or birthYear).
- * Accepts: { name?, birthYear? }
- */
+
 const updateProfile = async (req, res) => {
   try {
     const { name, birthYear } = req.body;
@@ -69,10 +66,7 @@ const updateProfile = async (req, res) => {
   }
 };
 
-/**
- * Optional dedicated endpoint to update birthYear only.
- * Accepts: { birthYear }
- */
+
 const updateBirthYear = async (req, res) => {
   try {
     const { birthYear } = req.body;

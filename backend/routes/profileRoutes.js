@@ -4,7 +4,7 @@ const {
   getProfile,
   updateProfile,
   updatePassword,
-  updateBirthYear, // added
+  updateBirthYear,
 } = require('../controllers/profileController');
 
 const router = express.Router();

@@ -718,12 +718,12 @@ exports.getUserPendingRequests = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-// Get all family circles where the user is a member
+// Getting all family circles where the user is a member
 exports.getUserFamilyCircles = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Find circles where the user is a member or creator
+    // Finding  circles where the user is a member or he created it
     const circles = await FamilyCircle.find({
       isActive: true,
       $or: [
