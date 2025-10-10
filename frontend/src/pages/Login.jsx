@@ -58,25 +58,14 @@ const Login = ({ setUser }) => {
     setLoading(false);
   };
 
-  const handleGoogleLogin = () => {
-    window.location.href = `${axiosInstance.defaults.baseURL}/auth/google?state=login`;
-      // const { accessToken, user } = response.data;
+const handleGoogleLogin = () => {
+  const baseURL = import.meta.env.VITE_MODE === "production"
+    ? "https://legacynest.onrender.com"
+    : "http://localhost:5000";
 
-      // Cookies.set("accessToken", accessToken, {
-      //   expires: new Date(Date.now() + 15 * 60 * 1000),
-      //   secure: process.env.NODE_ENV === "production",
-      //   sameSite: "strict",
-      // });
+  window.location.href = `${baseURL}/api/auth/google?state=login`;
+};
 
-      // Cookies.set("user", JSON.stringify(user), {
-      //   expires: new Date(Date.now() + 15 * 60 * 1000),
-      //   secure: process.env.NODE_ENV === "production",
-      //   sameSite: "strict",
-      // });
-
-      // setUser(user);
-      // navigate("/profile");    
-  };
 
   return (
     <div
