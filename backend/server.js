@@ -11,7 +11,6 @@ const http = require("http");
 const jwt = require("jsonwebtoken");
 // Utils
 const { setIo, register, unregisterBySocket } = require("./utils/socketManager");
-const { startPromptWorker } = require("./worker/promptWorker");
 
 // Models
 const CollaborativeStory = require("./models/CollaborativeStory");
@@ -26,7 +25,7 @@ const collaborativeStoryRoutes = require("./routes/collaborativeStoryRoutes");
 const promptRoutes=require("./routes/promptRoutes")
 const matchRoutes=require("./routes/matchRoutes")
 const familyChatbotRoutes = require("./routes/familyChatbot");
-
+const sharedPromptsRoutes = require("./routes/sharedPromptRoutes");
 dotenv.config();
 connectDB();
 
@@ -179,8 +178,6 @@ app.get("/", (req, res) => {
   res.send("Family Story App Backend is running!");
 });
 
-// Background Worker
-startPromptWorker();
 
 // Start Server
 const PORT = process.env.PORT || 5000;

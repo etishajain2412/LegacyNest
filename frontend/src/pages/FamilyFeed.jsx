@@ -1,51 +1,18 @@
-import { useEffect, useState } from "react";
-import socket from "../utils/socket";
-import SharedPromptItem from "../components/SharedPromptItem";
-import axiosInstance from "../utils/axiosInstance"; // ✅ use your preconfigured instance
+// src/pages/FamilyFeed.jsx
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { fetchMyCircles } from "../api/families";
+import { fetchFamilySharedPrompts, respondToSharedPrompt } from "../api/sharedPrompts";
+import socket from "../utils/socket"; // optional socket helper
 
-function FamilyFeed({ familyId }) {
-  const [feed, setFeed] = useState([]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    axiosInstance
-      .get(`/shared-prompts/family/${familyId}/feed`)
-      .then((res) => {
-        if (mounted) setFeed(res.data);
-      })
-      .catch(console.error);
-
-    socket.on("sharedPrompt:new", (data) => {
-      if (data.sharedPrompt.familyId === familyId) {
-        setFeed((prev) => [data.sharedPrompt, ...prev]);
-      }
-    });
-
-    socket.on("sharedPrompt:reply", ({ sharedPromptId }) => {
-      setFeed((prev) =>
-        prev.map((s) =>
-          s._id === sharedPromptId
-            ? { ...s, repliesCount: (s.repliesCount || 0) + 1 }
-            : s
-        )
-      );
-    });
-
-    return () => {
-      mounted = false;
-      socket.off("sharedPrompt:new");
-      socket.off("sharedPrompt:reply");
-    };
-  }, [familyId]);
+function Loader() {
+  return <div className="py-12 text-center text-gray-500">Loading…</div>;
+}
 
 function EmptyState({ title, subtitle }) {
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Family Feed</h1>
-      {feed.map((sp) => (
-        <SharedPromptItem key={sp._id} sharedPrompt={sp} />
-      ))}
+    <div className="py-16 text-center">
+      <div className="text-2xl font-semibold text-gray-800 mb-2">{title}</div>
+      <div className="text-sm text-gray-500 max-w-xl mx-auto">{subtitle}</div>
     </div>
   );
 }

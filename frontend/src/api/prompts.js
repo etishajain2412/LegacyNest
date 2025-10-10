@@ -1,5 +1,5 @@
-import axiosInstance from "../utils/axiosInstance"; // ✅ use shared axios instance
-
+import axios from "axios";
+import axiosInstance from "../utils/axiosInstance"; 
 const API = axios.create({
   baseURL: "http://localhost:5000/api",
   withCredentials: true,
