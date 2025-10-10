@@ -6,11 +6,6 @@ const API_BASE_URL =
     ? `${import.meta.env.VITE_BACKEND_URL}/api`
     : "http://localhost:5000/api";
 
-// ✅ Frontend origin (for reference or redirects)
-const FRONTEND_ORIGIN =
-  import.meta.env.MODE === "production"
-    ? import.meta.env.VITE_FRONTEND_URL
-    : "http://localhost:3000";
 
 // ✅ Create axios instance
 const axiosInstance = axios.create({

@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User.js");
 
+// ----------------- TOKEN GENERATION -----------------
 const generateTokens = (userId) => {
   const accessToken = jwt.sign({ id: userId }, process.env.JWT_ACCESS_SECRET, {
     expiresIn: "15m",
@@ -12,31 +13,39 @@ const generateTokens = (userId) => {
   return { accessToken, refreshToken };
 };
 
+// ----------------- SET COOKIES -----------------
 const setCookies = (res, accessToken, refreshToken, userData) => {
   const isProd = process.env.NODE_ENV === "production";
+  const cookieDomain = isProd ? ".vercel.app" : undefined;
 
+  // Access Token (HTTP-only)
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
+    domain: cookieDomain,
     maxAge: 15 * 60 * 1000,
   });
 
+  // Refresh Token (HTTP-only)
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
+    domain: cookieDomain,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
+  // User Data (accessible to frontend)
   res.cookie("user", JSON.stringify(userData), {
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
+    domain: cookieDomain,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
 
-// --------------- REGISTER ---------------
+// ----------------- REGISTER -----------------
 const register = async (req, res) => {
   try {
     const { name, username, email, password } = req.body;
@@ -61,14 +70,14 @@ const register = async (req, res) => {
     };
 
     setCookies(res, accessToken, refreshToken, userData);
-
     res.status(201).json({ message: "Registered successfully", user: userData });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
-// --------------- LOGIN ---------------
+// ----------------- LOGIN -----------------
 const login = async (req, res) => {
   try {
     const { identifier, password } = req.body;
@@ -95,20 +104,20 @@ const login = async (req, res) => {
     setCookies(res, accessToken, refreshToken, userData);
     res.json({ message: "Login successful", user: userData });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
-// --------------- GOOGLE CALLBACK ---------------
+// ----------------- GOOGLE CALLBACK -----------------
 const googleCallback = async (req, res) => {
-let frontendUrl = process.env.FRONTEND_URL_PROD;
-if (req.headers.host.includes('localhost')) {
-  frontendUrl = process.env.FRONTEND_URL_DEV;
-}
+  let frontendUrl = process.env.FRONTEND_URL_PROD;
+  if (req.headers.host.includes("localhost")) {
+    frontendUrl = process.env.FRONTEND_URL_DEV;
+  }
 
   try {
     const user = req.user;
-    console.log(user);
     if (!user)
       return res.redirect(`${frontendUrl}/login?error=Authentication failed`);
 
@@ -123,14 +132,15 @@ if (req.headers.host.includes('localhost')) {
     };
 
     setCookies(res, accessToken, refreshToken, userData);
-    console.log(frontendUrl)
+    console.log("✅ Redirecting to:", `${frontendUrl}/profile`);
     res.redirect(`${frontendUrl}/profile`);
   } catch (err) {
+    console.error("❌ Google callback error:", err);
     res.redirect(`${frontendUrl}/login?error=Server error`);
   }
 };
 
-// --------------- REFRESH TOKEN ---------------
+// ----------------- REFRESH ACCESS TOKEN -----------------
 const refreshAccessToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
@@ -146,20 +156,23 @@ const refreshAccessToken = async (req, res) => {
       expiresIn: "15m",
     });
 
+    const isProd = process.env.NODE_ENV === "production";
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+      domain: isProd ? ".vercel.app" : undefined,
       maxAge: 15 * 60 * 1000,
     });
 
     res.json({ message: "Token refreshed" });
   } catch (err) {
+    console.error(err);
     res.status(403).json({ message: "Invalid or expired refresh token" });
   }
 };
 
-// --------------- LOGOUT ---------------
+// ----------------- LOGOUT -----------------
 const logout = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
@@ -167,13 +180,25 @@ const logout = async (req, res) => {
       const decoded = jwt.decode(refreshToken);
       if (decoded?.id) await User.findByIdAndUpdate(decoded.id, { refreshToken: null });
     }
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
-    res.clearCookie("user");
+
+    const isProd = process.env.NODE_ENV === "production";
+    const cookieDomain = isProd ? ".vercel.app" : undefined;
+
+    res.clearCookie("accessToken", { domain: cookieDomain });
+    res.clearCookie("refreshToken", { domain: cookieDomain });
+    res.clearCookie("user", { domain: cookieDomain });
+
     res.json({ message: "Logged out successfully" });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
-module.exports = { register, login, refreshAccessToken, googleCallback, logout };
+module.exports = {
+  register,
+  login,
+  refreshAccessToken,
+  googleCallback,
+  logout,
+};
