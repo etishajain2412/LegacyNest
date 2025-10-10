@@ -60,6 +60,22 @@ const Login = ({ setUser }) => {
 
   const handleGoogleLogin = () => {
     window.location.href = `${axiosInstance.defaults.baseURL}/auth/google?state=login`;
+      // const { accessToken, user } = response.data;
+
+      // Cookies.set("accessToken", accessToken, {
+      //   expires: new Date(Date.now() + 15 * 60 * 1000),
+      //   secure: process.env.NODE_ENV === "production",
+      //   sameSite: "strict",
+      // });
+
+      // Cookies.set("user", JSON.stringify(user), {
+      //   expires: new Date(Date.now() + 15 * 60 * 1000),
+      //   secure: process.env.NODE_ENV === "production",
+      //   sameSite: "strict",
+      // });
+
+      // setUser(user);
+      // navigate("/profile");    
   };
 
   return (
