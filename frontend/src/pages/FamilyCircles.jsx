@@ -298,7 +298,6 @@ export default function FamilyCircles({ user, setUser }) {
   return (
     <>
     <div className="min-h-screen bg-gray-50">
-      {/* Header/Navbar */}
       <div className="bg-white border-b-2 border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
@@ -319,53 +318,17 @@ export default function FamilyCircles({ user, setUser }) {
                   onClick={toggleDropdown}
                 />
 
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg border-2 border-gray-200 p-2 z-50">
-                    <p
-                      className="p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
-                      onClick={() => navigate("/profilepage")}
-                    >
-                      Profile
-                    </p>
-                    <p
-                      className="p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
-                      onClick={() => navigate("/settings")}
-                    >
-                      Settings
-                    </p>
-                    <p
-                      className="p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
-                      onClick={() => navigate("/dashboard")}
-                    >
-                      Dashboard
-                    </p>
-                    <p
-                      className="p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
-                      onClick={() => navigate("/feed")}
-                    >
-                      Feed
-                    </p>
-                    <p 
-                      className="p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
-                      onClick={handleLogout}
-                    >
-                      Logout
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
             <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center font-serif">Family Circles</h2>
             
-            {/* Tabs Navigation */}
             <div className="border-b-2 border-gray-200 mb-8">
               <nav className="-mb-px flex space-x-8 overflow-x-auto">
                 {allTabs.map(tab => (
@@ -388,7 +351,6 @@ export default function FamilyCircles({ user, setUser }) {
               </nav>
             </div>
 
-            {/* Messages */}
             {error && (
               <div className="mb-6 bg-red-50 border-2 border-red-200 rounded-lg p-4">
                 <div className="flex items-center">
@@ -435,7 +397,6 @@ export default function FamilyCircles({ user, setUser }) {
               </div>
             )}
 
-            {/* My Circles Tab */}
             {activeTab === "myCircles" && (
               <div>
                 <div className="flex justify-between items-center mb-6">
@@ -517,7 +478,6 @@ export default function FamilyCircles({ user, setUser }) {
               </div>
             )}
 
-            {/* Create Circle Tab */}
             {activeTab === "create" && (
               <div className="max-w-2xl mx-auto">
                 <div className="bg-white rounded-lg">
@@ -584,7 +544,6 @@ export default function FamilyCircles({ user, setUser }) {
               </div>
             )}
 
-            {/* Join Circle Tab */}
             {activeTab === "join" && (
               <div className="max-w-2xl mx-auto">
                 <div className="bg-white rounded-lg">
@@ -652,7 +611,6 @@ export default function FamilyCircles({ user, setUser }) {
               </div>
             )}
 
-            {/* My Pending Requests Tab */}
             {activeTab === "myRequests" && (
               <div>
                 <h3 className="text-2xl font-semibold text-gray-900 mb-6 font-serif">My Pending Join Requests</h3>
@@ -731,7 +689,6 @@ export default function FamilyCircles({ user, setUser }) {
               </div>
             )}
 
-            {/* Admin Pending Requests Tab */}
             {activeTab === "adminRequests" && (
               <div>
                 <h3 className="text-2xl font-semibold text-gray-900 mb-6 font-serif">Pending Join Requests for Your Circles</h3>
@@ -796,7 +753,6 @@ export default function FamilyCircles({ user, setUser }) {
             </div>
           )}
 
-          {/* Circle Details Modal */}
           {selectedCircle && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border-2 border-gray-200">
@@ -816,12 +772,10 @@ export default function FamilyCircles({ user, setUser }) {
                 </div>
 
                 <div className="p-6">
-                  {/* Admin Controls */}
                   {isUserAdmin(selectedCircle) && (
                     <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-8">
                       <h4 className="text-lg font-semibold text-gray-900 mb-4 font-serif">Admin Controls</h4>
                       
-                      {/* Add Member Form */}
                       <form onSubmit={handleAddMember} className="flex gap-3 mb-6">
                         <input
                           type="text"
@@ -838,7 +792,6 @@ export default function FamilyCircles({ user, setUser }) {
                         </button>
                       </form>
 
-                      {/* Pending Requests for this specific circle */}
                       {selectedCircle.joinRequests && selectedCircle.joinRequests.filter(r => r.status === 'pending').length > 0 && (
                         <div className="mt-6">
                           <h5 className="font-semibold text-gray-900 mb-4 text-lg font-serif">
@@ -878,7 +831,6 @@ export default function FamilyCircles({ user, setUser }) {
                         </div>
                       )}
 
-                      {/* View All Requests Button */}
                       <button 
                         onClick={() => {
                           setActiveTab("adminRequests");
@@ -892,13 +844,11 @@ export default function FamilyCircles({ user, setUser }) {
                     </div>
                   )}
 
-                  {/* Members List */}
                   <div className="mb-8">
                     <h4 className="text-xl font-semibold text-gray-900 mb-4 font-serif">
                       Members ({selectedCircle.members.length + 1})
                     </h4>
                     <div className="space-y-3">
-                      {/* Creator */}
                       <div className="flex justify-between items-center p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-purple-700">
@@ -914,7 +864,6 @@ export default function FamilyCircles({ user, setUser }) {
                         </span>
                       </div>
 
-                      {/* Members */}
                       {selectedCircle.members.map((member) => (
                         <div key={member._id} className="flex justify-between items-center p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                           <div className="flex items-center gap-4">
@@ -931,10 +880,8 @@ export default function FamilyCircles({ user, setUser }) {
                           <div className="flex items-center gap-3">
                             {getRoleBadge(member.role)}
                             
-                            {/* Admin actions */}
                             {isUserAdmin(selectedCircle) && member.user._id !== localStorage.getItem("userId") && (
                               <div className="flex gap-2">
-                                {/* Role dropdown for admins */}
                                 {isUserCreator(selectedCircle) && member.role !== 'admin' && (
                                   <button
                                     onClick={() => handleMakeAdmin(member._id)}
@@ -945,7 +892,6 @@ export default function FamilyCircles({ user, setUser }) {
                                   </button>
                                 )}
                                 
-                                {/* Role change dropdown */}
                                 <select
                                   value={member.role}
                                   onChange={(e) => handleUpdateMemberRole(member._id, e.target.value)}
@@ -957,7 +903,6 @@ export default function FamilyCircles({ user, setUser }) {
                                   <option value="admin" disabled={!isUserCreator(selectedCircle)}>Admin</option>
                                 </select>
                                 
-                                {/* Remove member button */}
                                 <button
                                   onClick={() => handleRemoveMember(member._id)}
                                   className="bg-red-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-red-700 transition-colors border-2 border-red-600"
@@ -973,7 +918,6 @@ export default function FamilyCircles({ user, setUser }) {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="flex gap-3 pt-6 border-t-2 border-gray-200 flex-wrap">
                     {!isUserCreator(selectedCircle) && (
                       <button
@@ -1001,7 +945,6 @@ export default function FamilyCircles({ user, setUser }) {
                     </button>
                   </div>
 
-                  {/* Circle Info */}
                   <div className="mt-6 text-sm text-gray-500 bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
                     <p><strong>Circle ID:</strong> <code className="bg-gray-200 px-2 py-1 rounded font-mono text-xs border">{selectedCircle._id}</code></p>
                     <p className="mt-2">Share this ID with others so they can request to join.</p>

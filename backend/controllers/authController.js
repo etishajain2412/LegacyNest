@@ -1,259 +1,225 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User.js');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User.js");
 
+// ----------------- TOKEN GENERATION -----------------
 const generateTokens = (userId) => {
-  const accessToken = jwt.sign(
-    { id: userId }, 
-    process.env.JWT_ACCESS_SECRET, 
-    { expiresIn: '15m' }
-  );
-  
-  const refreshToken = jwt.sign(
-    { id: userId }, 
-    process.env.JWT_REFRESH_SECRET, 
-    { expiresIn: '7d' }
-  );
-  
+  const accessToken = jwt.sign({ id: userId }, process.env.JWT_ACCESS_SECRET, {
+    expiresIn: "15m",
+  });
+  const refreshToken = jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: "7d",
+  });
   return { accessToken, refreshToken };
 };
 
+// ----------------- SET COOKIES -----------------
+const setCookies = (res, accessToken, refreshToken, userData) => {
+  const isProd = process.env.NODE_ENV === "production";
+  
+  // For Vercel, we need to handle both custom domains and .vercel.app
+  const getCookieDomain = () => {
+    if (!isProd) return undefined; // localhost
+    
+    // If you have a custom domain, use it without www
+    const customDomain = process.env.PRODUCTION_DOMAIN; // e.g., "yourapp.com"
+    if (customDomain) {
+      return `.${customDomain}`; // leading dot for subdomains
+    }
+    
+    // Fallback for .vercel.app deployment
+    return ".vercel.app";
+  };
+
+  const cookieDomain = getCookieDomain();
+  const sameSite = isProd ? "none" : "lax"; // "none" for cross-site
+  const secure = isProd; // true in production
+
+  // Access Token (HTTP-only)
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure,
+    sameSite,
+    domain: cookieDomain,
+    maxAge: 15 * 60 * 1000,
+    path: "/",
+  });
+
+  // Refresh Token (HTTP-only)
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure,
+    sameSite,
+    domain: cookieDomain,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
+  });
+
+  // User Data (accessible to frontend)
+  res.cookie("user", JSON.stringify(userData), {
+    secure,
+    sameSite,
+    domain: cookieDomain,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
+  });
+};
+
+// ----------------- REGISTER -----------------
 const register = async (req, res) => {
   try {
     const { name, username, email, password } = req.body;
+    if (!name || !username || !email || !password)
+      return res.status(400).json({ message: "All fields required" });
 
-    if (!name || !username || !email || !password) {
-      return res.status(400).json({ message: 'All fields are required' });
-    }
+    const existing = await User.findOne({ email });
+    if (existing)
+      return res.status(400).json({ message: "Email already exists" });
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: 'Email already exists' });
-
-    const newUser = new User({
-      name,
-      username,
-      email,
-      password,
-    });
-
+    const newUser = new User({ name, username, email, password });
     await newUser.save();
 
     const { accessToken, refreshToken } = generateTokens(newUser._id);
-
     await User.findByIdAndUpdate(newUser._id, { refreshToken });
 
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60 * 1000,
-    });
+    const userData = {
+      id: newUser._id,
+      name: newUser.name,
+      username: newUser.username,
+      email: newUser.email,
+    };
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    res.status(201).json({ 
-      message: 'Registration successful',
-      accessToken,
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        username: newUser.username,
-        email: newUser.email
-      }
-    });
-
-  } catch (error) {
-    console.error('Error during registration:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    setCookies(res, accessToken, refreshToken, userData);
+    res.status(201).json({ message: "Registered successfully", user: userData });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
+// ----------------- LOGIN -----------------
 const login = async (req, res) => {
   try {
     const { identifier, password } = req.body;
-
     const user = await User.findOne({
-      $or: [{ email: identifier }, { username: identifier }]
+      $or: [{ email: identifier }, { username: identifier }],
     });
+    if (!user) return res.status(400).json({ message: "User not found" });
+    if (!user.password)
+      return res.status(400).json({ message: "Use Google login instead" });
 
-    if (!user) {
-      return res.status(400).json({ message: 'User not found' });
-    }
-
-    if (!user.password) {
-      return res.status(400).json({ message: 'Please use Google to login' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(400).json({ message: "Invalid credentials" });
 
     const { accessToken, refreshToken } = generateTokens(user._id);
-
     await User.findByIdAndUpdate(user._id, { refreshToken });
-
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60 * 1000,
-    });
-
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    res.status(200).json({ 
-      message: 'Login successful',
-      accessToken,
-      user: {
-        id: user._id,
-        name: user.name,
-        username: user.username,
-        email: user.email
-      }
-    });
-
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-};
-
-// REFRESH TOKEN 
-const refreshAccessToken = async (req, res) => {
-  try {
-    const refreshToken = req.cookies.refreshToken;
-
-    if (!refreshToken) {
-      return res.status(401).json({ message: 'Refresh token required' });
-    }
-
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    
-    const user = await User.findOne({ 
-      _id: decoded.id, 
-      refreshToken 
-    });
-
-    if (!user) {
-      return res.status(403).json({ message: 'Invalid refresh token' });
-    }
-
-    const accessToken = jwt.sign(
-      { id: user._id }, 
-      process.env.JWT_ACCESS_SECRET, 
-      { expiresIn: '15m' }
-    );
-
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60 * 1000,
-    });
-
-    res.json({ 
-      message: 'Access token refreshed',
-      accessToken 
-    });
-
-  } catch (error) {
-    console.error('Token refresh error:', error);
-    
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(403).json({ message: 'Invalid refresh token' });
-    }
-    
-    if (error.name === 'TokenExpiredError') {
-      return res.status(403).json({ message: 'Refresh token expired' });
-    }
-
-    res.status(500).json({ message: 'Internal server error' });
-  }
-};
-
-const googleCallback = async (req, res) => {
-  try {
-    const user = req.user;
-
-    if (!user) {
-      const errorMessage = req.authInfo?.message || 'Authentication failed';
-      
-      if (errorMessage.includes('Please login instead')) {
-        return res.redirect("http://localhost:3000/login?error=Account already exists. Please login instead.");
-      } else if (errorMessage.includes('Please register first')) {
-        return res.redirect("http://localhost:3000/register?error=No account found. Please register first.");
-      } else {
-        return res.redirect(`http://localhost:3000/login?error=${encodeURIComponent(errorMessage)}`);
-      }
-    }
-
-    const { accessToken, refreshToken } = generateTokens(user._id);
-
-    await User.findByIdAndUpdate(user._id, { refreshToken });
-
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60 * 1000,
-    });
-
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
 
     const userData = {
       id: user._id,
       name: user.name,
       username: user.username,
-      email: user.email
+      email: user.email,
     };
-    
-    res.cookie('user', JSON.stringify(userData), {
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60 * 1000,
-    });
 
-    res.redirect("http://localhost:3000/profile");
-
-  } catch (error) {
-    res.redirect("http://localhost:3000/login?error=Server error during authentication.");
+    setCookies(res, accessToken, refreshToken, userData);
+    res.json({ message: "Login successful", user: userData });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
+// ----------------- GOOGLE CALLBACK -----------------
+const googleCallback = async (req, res) => {
+  let frontendUrl = process.env.FRONTEND_URL_PROD;
+  if (req.headers.host.includes("localhost")) {
+    frontendUrl = process.env.FRONTEND_URL_DEV;
+  }
+
+  try {
+    const user = req.user;
+    if (!user)
+      return res.redirect(`${frontendUrl}/login?error=Authentication failed`);
+
+    const { accessToken, refreshToken } = generateTokens(user._id);
+    await User.findByIdAndUpdate(user._id, { refreshToken });
+
+    const userData = {
+      id: user._id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+    };
+
+    setCookies(res, accessToken, refreshToken, userData);
+    console.log("✅ Redirecting to:", `${frontendUrl}/profile`);
+    res.redirect(`${frontendUrl}/profile`);
+  } catch (err) {
+    console.error("❌ Google callback error:", err);
+    res.redirect(`${frontendUrl}/login?error=Server error`);
+  }
+};
+
+// ----------------- REFRESH ACCESS TOKEN -----------------
+const refreshAccessToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken)
+      return res.status(401).json({ message: "No refresh token" });
+
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findById(decoded.id);
+    if (!user || user.refreshToken !== refreshToken)
+      return res.status(403).json({ message: "Invalid refresh token" });
+
+    const accessToken = jwt.sign({ id: user._id }, process.env.JWT_ACCESS_SECRET, {
+      expiresIn: "15m",
+    });
+
+    const isProd = process.env.NODE_ENV === "production";
+    const cookieDomain = isProd ? (process.env.PRODUCTION_DOMAIN ? `.${process.env.PRODUCTION_DOMAIN}` : ".vercel.app") : undefined;
+    
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+      domain: cookieDomain,
+      maxAge: 15 * 60 * 1000,
+      path: "/",
+    });
+
+    res.json({ message: "Token refreshed" });
+  } catch (err) {
+    console.error(err);
+    res.status(403).json({ message: "Invalid or expired refresh token" });
+  }
+};
+
+// ----------------- LOGOUT -----------------
 const logout = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
-
     if (refreshToken) {
       const decoded = jwt.decode(refreshToken);
-      if (decoded?.id) {
-        await User.findByIdAndUpdate(decoded.id, { refreshToken: null });
-      }
+      if (decoded?.id) await User.findByIdAndUpdate(decoded.id, { refreshToken: null });
     }
 
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    const isProd = process.env.NODE_ENV === "production";
+    const cookieDomain = isProd ? (process.env.PRODUCTION_DOMAIN ? `.${process.env.PRODUCTION_DOMAIN}` : ".vercel.app") : undefined;
 
-    res.status(200).json({ message: 'Logged out successfully' });
+    const clearOptions = {
+      domain: cookieDomain,
+      path: "/",
+    };
 
-  } catch (error) {
-    res.status(500).json({ message: 'Internal server error' });
+    res.clearCookie("accessToken", clearOptions);
+    res.clearCookie("refreshToken", clearOptions);
+    res.clearCookie("user", clearOptions);
+
+    res.json({ message: "Logged out successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -262,5 +228,5 @@ module.exports = {
   login,
   refreshAccessToken,
   googleCallback,
-  logout
+  logout,
 };

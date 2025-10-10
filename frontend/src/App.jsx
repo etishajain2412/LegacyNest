@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import FrontPage from "./pages/frontpage";
+import FrontPage from "./pages/FrontPage";
 import Upload from "./pages/Upload";
 import Timeline from "./pages/Timeline";
 import ViewStory from "./pages/ViewStory";
@@ -8,7 +8,6 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import BackButton from "./components/Back";
 import Profile from "./pages/Profile";
-import Dashboard from "./pages/Dashboard";
 import Stories from "./pages/Stories";
 import FamilyCircles from "./pages/FamilyCircles";
 import FeedPage from "./pages/FeedPage";
@@ -18,6 +17,7 @@ import PromptsPage from "./pages/PromptsPage";
 import MatchesPage from "./pages/MatchesPage";
 import FamilyFeed from "./pages/FamilyFeed";
 
+import FamilyChatbot from "./pages/FamilyChatbot";
 import FamilyRoom from "./pages/FamilyRoom";
 
 import CalendarPage from "./pages/Calendar";
@@ -25,6 +25,7 @@ import StoryReport from "./pages/StoryReport";
 import StoriesByCategory from "./pages/StoriesByCategory";
 
 function ProtectedRoute({ user, children }) {
+  console.log(user);
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -91,16 +92,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute user={user}>
-              <Dashboard user={user} setUser={setUser} />
-            </ProtectedRoute>
-          }
-        />
 
-        {/* Stories Management */}
         <Route
           path="/stories"
           element={
@@ -110,7 +102,6 @@ export default function App() {
           }
         />
 
-        {/* Family Circles */}
         <Route
           path="/circles"
           element={
@@ -124,6 +115,15 @@ export default function App() {
   element={
     <ProtectedRoute user={user}>
       <FamilyRoom user={user} />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/familychatbot"
+  element={
+    <ProtectedRoute user={user}>
+      <FamilyChatbot user={user} />
     </ProtectedRoute>
   }
 />

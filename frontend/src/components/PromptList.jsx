@@ -11,13 +11,10 @@ const PromptList = ({ familyId }) => {
   useEffect(() => {
     loadPrompts();
 
-    // Realtime new prompts delivered by backend
     socket.on("prompt:new", (data) => {
-      // if server sends the full instance object
       setPrompts((prev) => [data, ...prev]);
     });
 
-    // when a prompt is skipped or responded, server may emit events
     socket.on("prompt:skipped", ({ promptId }) => {
       setPrompts((prev) => prev.filter((p) => p._id !== promptId));
     });
@@ -54,25 +51,20 @@ const PromptList = ({ familyId }) => {
   };
 
   const handleSkip = (id) => {
-    // remove skipped prompt from UI (backend also marks skipped)
     setPrompts((prev) => prev.filter((p) => p._id !== id));
   };
 
   const handleGenerate = async () => {
     try {
       setGenerating(true);
-      // call the backend to create a dynamic prompt
       const res = await createDynamicPrompt();
       if (res && res.instance) {
-        // prepend the returned instance
         setPrompts((prev) => [res.instance, ...prev]);
       } else {
-        // fallback: reload list
         await loadPrompts();
       }
     } catch (err) {
       console.error("Error generating new prompt:", err);
-      // show toast / UI feedback if you have one
     } finally {
       setGenerating(false);
     }
@@ -80,7 +72,6 @@ const PromptList = ({ familyId }) => {
 
   return (
     <div>
-      {/* Top control bar */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Memory Prompts</h2>
         <div>

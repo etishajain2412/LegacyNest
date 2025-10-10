@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import domtoimage from "dom-to-image-more";
+import axiosInstance from "../utils/axiosInstance";
 
 export default function Timeline({ user }) {
   const [stories, setStories] = useState([]);
@@ -11,6 +12,7 @@ export default function Timeline({ user }) {
   const [exportMenu, setExportMenu] = useState(false);
   const navigate = useNavigate();
 
+  // ---------------- Export Helpers ----------------
   const exportStories = (type) => {
     const filtered = stories.filter((s) => s.mediaType === type);
 
@@ -19,7 +21,7 @@ export default function Timeline({ user }) {
       return;
     }
 
-    if (["text"].includes(type)) {
+    if (type === "text") {
       const textContent = filtered
         .map(
           (s) =>
@@ -32,9 +34,7 @@ export default function Timeline({ user }) {
       link.download = `${type}_stories.txt`;
       link.click();
     } else {
-      const urls = filtered.map(
-        (s) => `${s.title} - ${s.mediaUrl || "No URL"}`
-      );
+      const urls = filtered.map((s) => `${s.title} - ${s.mediaUrl || "No URL"}`);
       const blob = new Blob([urls.join("\n")], { type: "text/plain" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -50,7 +50,7 @@ export default function Timeline({ user }) {
     try {
       const scale = 2;
       const style = {
-        transform: "scale(" + scale + ")",
+        transform: `scale(${scale})`,
         transformOrigin: "top left",
         width: input.offsetWidth + "px",
         height: input.offsetHeight + "px",
@@ -75,28 +75,24 @@ export default function Timeline({ user }) {
     }
   };
 
+  // ---------------- Fetch Stories ----------------
   useEffect(() => {
     if (!user?.id) return;
 
-    async function fetchStories() {
+    const fetchStories = async () => {
       try {
         setLoading(true);
-
-        const url =
+        const endpoint =
           view === "mine"
-            ? `http://localhost:5000/api/stories/mine/${user.id}`
-            : `http://localhost:5000/api/stories/`;
+            ? `/stories/mine/${user.id}`
+            : `/stories/`;
 
-        const res = await fetch(url, {
-           credentials: 'include',
-        });
-
-        const data = await res.json();
+        const { data } = await axiosInstance.get(endpoint);
 
         if (data.success) {
           setStories(data.stories);
         } else {
-          console.error("Failed to fetch stories", data);
+          console.error("Failed to fetch stories:", data);
           setStories([]);
         }
       } catch (err) {
@@ -105,21 +101,17 @@ export default function Timeline({ user }) {
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     fetchStories();
   }, [view, user]);
 
+  // ---------------- Delete Story ----------------
   async function handleDelete(id) {
     if (!window.confirm("Are you sure you want to delete this story?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/stories/${id}`, {
-        method: "DELETE",
-        credentials: 'include',
-      });
-      const data = await res.json();
-
+      const { data } = await axiosInstance.delete(`/stories/${id}`);
       if (data.success) {
         setStories((prev) => prev.filter((s) => s._id !== id));
       } else {
@@ -131,6 +123,7 @@ export default function Timeline({ user }) {
     }
   }
 
+  // ---------------- Render ----------------
   return (
     <div className="relative flex flex-col items-center px-6 py-10 bg-gray-50 min-h-screen">
       <div className="relative w-full max-w-5xl mb-6">
@@ -185,15 +178,17 @@ export default function Timeline({ user }) {
 
       <div className="mb-6 mt-11 flex gap-4">
         <button
-          className={`px-4 py-2 rounded ${view === "mine" ? "bg-gray-900 text-white" : "bg-gray-200"
-            }`}
+          className={`px-4 py-2 rounded ${
+            view === "mine" ? "bg-gray-900 text-white" : "bg-gray-200"
+          }`}
           onClick={() => setView("mine")}
         >
           My Timeline
         </button>
         <button
-          className={`px-4 py-2 rounded ${view === "family" ? "bg-gray-900 text-white" : "bg-gray-200"
-            }`}
+          className={`px-4 py-2 rounded ${
+            view === "family" ? "bg-gray-900 text-white" : "bg-gray-200"
+          }`}
           onClick={() => setView("family")}
         >
           Family Timeline
@@ -294,12 +289,12 @@ export default function Timeline({ user }) {
                         <source src={story.mediaUrl} type="audio/mpeg" />
                       </audio>
                     )}
+
                     {story.aiAnalysis?.tags?.length > 0 && (
                       <p className="mt-2 text-sm text-gray-600">
                         Tags: {story.aiAnalysis.tags.join(", ")}
                       </p>
                     )}
-
 
                     <div className="flex justify-end mt-4">
                       <button

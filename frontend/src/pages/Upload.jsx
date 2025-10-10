@@ -69,7 +69,6 @@ export default function Upload({ user }) {
           Upload New Story
         </h2>
 
-        {/* Title */}
         <input
           placeholder="Title"
           value={title}
@@ -78,7 +77,6 @@ export default function Upload({ user }) {
           required
         />
 
-        {/* Media Type */}
         <select
           value={mediaType}
           onChange={(e) => setMediaType(e.target.value)}
@@ -90,7 +88,6 @@ export default function Upload({ user }) {
           <option value="audio">Audio</option>
         </select>
 
-        {/* Content / File */}
         {mediaType === "text" && (
           <textarea
             placeholder="Write your story..."
@@ -137,24 +134,21 @@ export default function Upload({ user }) {
           </label>
         )}
 
-        {/* Tags */}
         <input
           placeholder="Tags (comma separated)"
           value={tags}
           onChange={(e) => setTags(e.target.value)}
-          className="p-2 border-2 border-black border rounded"
+          className="p-2 border-2 border-black rounded"
         />
 
-        {/* Date */}
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="p-2 border-2 border-black border rounded"
+          className="p-2 border-2 border-black rounded"
           required
         />
 
-        {/* Visibility */}
         <select
           value={visibility}
           onChange={(e) => setVisibility(e.target.value)}
@@ -166,7 +160,6 @@ export default function Upload({ user }) {
           <option value="public">Public</option>
         </select>
 
-        {/* Submit */}
         <button type="submit" className="p-2 bg-black text-white rounded">
           Add Story
         </button>

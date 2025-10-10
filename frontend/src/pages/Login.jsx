@@ -35,19 +35,17 @@ const Login = ({ setUser }) => {
     setLoading(true);
     setErrorMessage("");
     try {
-      const response = await axiosInstance.post("/auth/login", formData);
-      const { accessToken, user } = response.data;
-
-      Cookies.set("accessToken", accessToken, {
-        expires: new Date(Date.now() + 15 * 60 * 1000),
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+      const response = await axiosInstance.post("/auth/login", formData, {
+        withCredentials: true, // ✅ ensure cookies are sent cross-domain
       });
 
+      const { user } = response.data;
+
+      // ✅ No need to manually set cookies for accessToken — backend already sets HttpOnly cookies
       Cookies.set("user", JSON.stringify(user), {
-        expires: new Date(Date.now() + 15 * 60 * 1000),
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        expires: 7,
+        secure: import.meta.env.VITE_MODE === "production",
+        sameSite: "None",
       });
 
       setUser(user);
@@ -58,8 +56,14 @@ const Login = ({ setUser }) => {
     setLoading(false);
   };
 
+  // ✅ Corrected backend base URL for Render
   const handleGoogleLogin = () => {
-    window.location.href = `${axiosInstance.defaults.baseURL}/auth/google?state=login`;
+    const baseURL =
+      import.meta.env.VITE_MODE === "production"
+        ? "https://legacynest.onrender.com"
+        : "http://localhost:5000";
+
+    window.location.href = `${baseURL}/api/auth/google`;
   };
 
   return (
@@ -71,7 +75,9 @@ const Login = ({ setUser }) => {
       }}
     >
       <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md border-2 border-black">
-        <h2 className="text-2xl font-bold text-center mb-2 font-serif">Login</h2>
+        <h2 className="text-2xl font-bold text-center mb-2 font-serif">
+          Login
+        </h2>
         <p className="text-sm text-gray-600 text-center mb-4">
           Enter your credentials to access your account
         </p>
@@ -82,7 +88,7 @@ const Login = ({ setUser }) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3 ">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 ">
               Email or Username

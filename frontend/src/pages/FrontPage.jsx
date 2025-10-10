@@ -131,7 +131,7 @@ function FrontPage({ user, setUser }) {
                 </p>
                 
                 <p
-                  className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
+                  className="p-2 hover:bg-gray-100 border-1 border-black cursor-pointer"
                   onClick={() => navigate("/matches")}
                 >
                   Matches
@@ -143,19 +143,22 @@ function FrontPage({ user, setUser }) {
                   Family Feed
                 </p>
                                 <p
-                  className="p-2 hover:bg-gray-100 border-1 cursor-pointer"
+                  className="p-2 hover:bg-gray-100 border-1 border-black cursor-pointer"
                   onClick={() => navigate("/feed")}
                 >
                   Feed
                 </p>
                 
-                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={()=>navigate("/circles")}>
+                <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={()=>navigate("/circles")}>
                   Circles
                 </p>
-                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={()=>navigate("/familyroom")}>
-                  FamilyRoom
+                <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={()=>navigate("/familychatbot")}>
+                  Family Chatbot
                 </p>
-                                <p className="p-2 hover:bg-gray-100 border-1 cursor-pointer" onClick={handleLogout}>
+                <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={()=>navigate("/familyroom")}>
+                  Family Room
+                </p>
+                <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={handleLogout}>
                   Logout
                 </p>
               </div>
@@ -235,7 +238,7 @@ function FrontPage({ user, setUser }) {
           </div>
 
           <div
-            onClick={() => navigate("/upload")}
+            onClick={() => navigate("/circles")}
             className="p-6 border-2 shadow  border-black cursor-pointer text-center transition"
           >
             <img

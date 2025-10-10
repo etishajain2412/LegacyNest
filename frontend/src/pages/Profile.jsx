@@ -147,7 +147,7 @@ const Profile = ({ user, setUser }) => {
                     Account Settings
                   </h3>
 
-                  <div className="bg-gray-50 p-4 rounded-lg border-1 border-2 border-black">
+                  <div className="bg-gray-50 p-4 rounded-lg  border-2 border-black">
                     {!editName ? (
                       <div className="flex justify-between items-center ">
                         <div>
@@ -198,7 +198,6 @@ const Profile = ({ user, setUser }) => {
                     )}
                   </div>
 
-                  {/* BIRTH YEAR SECTION */}
                   <div className="bg-gray-50 p-4 rounded-lg mt-4 border-1">
                     {!editBirthYear ? (
                       <div className="flex justify-between items-center ">
@@ -255,7 +254,6 @@ const Profile = ({ user, setUser }) => {
                       </form>
                     )}
                   </div>
-                  {/* END BIRTH YEAR SECTION */}
 
                   <div className="bg-gray-50 p-4 rounded-lg mt-4 border-1">
                     {!changePassword ? (
