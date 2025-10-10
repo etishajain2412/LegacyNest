@@ -1,5 +1,5 @@
 const PromptInstance = require("../models/PromptInstance");
-const FamilyCircle = require("../models/familyCircle");
+const FamilyCircle = require("../models/FamilyCircle");
 const SharedPrompt = require("../models/SharedPrompt"); 
 const { getIo } = require("../utils/socketManager");
 

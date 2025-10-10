@@ -1,7 +1,6 @@
 import { useState } from "react";
 import axiosInstance from "../utils/axiosInstance";
 import Cookies from "js-cookie";
-import { Loader2, Edit3, Lock, Save, XCircle } from "lucide-react";
 
 const Profile = ({ user, setUser }) => {
   const [editName, setEditName] = useState(false);

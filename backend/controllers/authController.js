@@ -2,40 +2,25 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User.js");
 
-// ----------------- TOKEN GENERATION -----------------
 const generateTokens = (userId) => {
-  const accessToken = jwt.sign({ id: userId }, process.env.JWT_ACCESS_SECRET, {
-    expiresIn: "15m",
-  });
-  const refreshToken = jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: "7d",
-  });
+  const accessToken = jwt.sign({ id: userId }, process.env.JWT_ACCESS_SECRET, { expiresIn: "15m" });
+  const refreshToken = jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
   return { accessToken, refreshToken };
 };
 
-// ----------------- SET COOKIES -----------------
 const setCookies = (res, accessToken, refreshToken, userData) => {
   const isProd = process.env.NODE_ENV === "production";
-  
-  // For Vercel, we need to handle both custom domains and .vercel.app
+
   const getCookieDomain = () => {
-    if (!isProd) return undefined; // localhost
-    
-    // If you have a custom domain, use it without www
-    const customDomain = process.env.PRODUCTION_DOMAIN; // e.g., "yourapp.com"
-    if (customDomain) {
-      return `.${customDomain}`; // leading dot for subdomains
-    }
-    
-    // Fallback for .vercel.app deployment
-    return ".vercel.app";
+    if (!isProd) return undefined;
+    const customDomain = process.env.PRODUCTION_DOMAIN;
+    return customDomain ? `.${customDomain}` : ".vercel.app";
   };
 
   const cookieDomain = getCookieDomain();
-  const sameSite = isProd ? "none" : "lax"; // "none" for cross-site
-  const secure = isProd; // true in production
+  const sameSite = isProd ? "none" : "lax";
+  const secure = isProd;
 
-  // Access Token (HTTP-only)
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure,
@@ -45,7 +30,6 @@ const setCookies = (res, accessToken, refreshToken, userData) => {
     path: "/",
   });
 
-  // Refresh Token (HTTP-only)
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure,
@@ -55,7 +39,6 @@ const setCookies = (res, accessToken, refreshToken, userData) => {
     path: "/",
   });
 
-  // User Data (accessible to frontend)
   res.cookie("user", JSON.stringify(userData), {
     secure,
     sameSite,
@@ -65,7 +48,6 @@ const setCookies = (res, accessToken, refreshToken, userData) => {
   });
 };
 
-// ----------------- REGISTER -----------------
 const register = async (req, res) => {
   try {
     const { name, username, email, password } = req.body;
@@ -73,8 +55,7 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "All fields required" });
 
     const existing = await User.findOne({ email });
-    if (existing)
-      return res.status(400).json({ message: "Email already exists" });
+    if (existing) return res.status(400).json({ message: "Email already exists" });
 
     const newUser = new User({ name, username, email, password });
     await newUser.save();
@@ -97,16 +78,12 @@ const register = async (req, res) => {
   }
 };
 
-// ----------------- LOGIN -----------------
 const login = async (req, res) => {
   try {
     const { identifier, password } = req.body;
-    const user = await User.findOne({
-      $or: [{ email: identifier }, { username: identifier }],
-    });
+    const user = await User.findOne({ $or: [{ email: identifier }, { username: identifier }] });
     if (!user) return res.status(400).json({ message: "User not found" });
-    if (!user.password)
-      return res.status(400).json({ message: "Use Google login instead" });
+    if (!user.password) return res.status(400).json({ message: "Use Google login instead" });
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(400).json({ message: "Invalid credentials" });
@@ -129,17 +106,13 @@ const login = async (req, res) => {
   }
 };
 
-// ----------------- GOOGLE CALLBACK -----------------
 const googleCallback = async (req, res) => {
   let frontendUrl = process.env.FRONTEND_URL_PROD;
-  if (req.headers.host.includes("localhost")) {
-    frontendUrl = process.env.FRONTEND_URL_DEV;
-  }
+  if (req.headers.host.includes("localhost")) frontendUrl = process.env.FRONTEND_URL_DEV;
 
   try {
     const user = req.user;
-    if (!user)
-      return res.redirect(`${frontendUrl}/login?error=Authentication failed`);
+    if (!user) return res.redirect(`${frontendUrl}/login?error=Authentication failed`);
 
     const { accessToken, refreshToken } = generateTokens(user._id);
     await User.findByIdAndUpdate(user._id, { refreshToken });
@@ -152,33 +125,32 @@ const googleCallback = async (req, res) => {
     };
 
     setCookies(res, accessToken, refreshToken, userData);
-    console.log("✅ Redirecting to:", `${frontendUrl}/profile`);
     res.redirect(`${frontendUrl}/profile`);
   } catch (err) {
-    console.error("❌ Google callback error:", err);
+    console.error("Google callback error:", err);
     res.redirect(`${frontendUrl}/login?error=Server error`);
   }
 };
 
-// ----------------- REFRESH ACCESS TOKEN -----------------
 const refreshAccessToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken)
-      return res.status(401).json({ message: "No refresh token" });
+    if (!refreshToken) return res.status(401).json({ message: "No refresh token" });
 
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     const user = await User.findById(decoded.id);
     if (!user || user.refreshToken !== refreshToken)
       return res.status(403).json({ message: "Invalid refresh token" });
 
-    const accessToken = jwt.sign({ id: user._id }, process.env.JWT_ACCESS_SECRET, {
-      expiresIn: "15m",
-    });
+    const accessToken = jwt.sign({ id: user._id }, process.env.JWT_ACCESS_SECRET, { expiresIn: "15m" });
 
     const isProd = process.env.NODE_ENV === "production";
-    const cookieDomain = isProd ? (process.env.PRODUCTION_DOMAIN ? `.${process.env.PRODUCTION_DOMAIN}` : ".vercel.app") : undefined;
-    
+    const cookieDomain = isProd
+      ? process.env.PRODUCTION_DOMAIN
+        ? `.${process.env.PRODUCTION_DOMAIN}`
+        : ".vercel.app"
+      : undefined;
+
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: isProd,
@@ -195,7 +167,6 @@ const refreshAccessToken = async (req, res) => {
   }
 };
 
-// ----------------- LOGOUT -----------------
 const logout = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
@@ -205,12 +176,13 @@ const logout = async (req, res) => {
     }
 
     const isProd = process.env.NODE_ENV === "production";
-    const cookieDomain = isProd ? (process.env.PRODUCTION_DOMAIN ? `.${process.env.PRODUCTION_DOMAIN}` : ".vercel.app") : undefined;
+    const cookieDomain = isProd
+      ? process.env.PRODUCTION_DOMAIN
+        ? `.${process.env.PRODUCTION_DOMAIN}`
+        : ".vercel.app"
+      : undefined;
 
-    const clearOptions = {
-      domain: cookieDomain,
-      path: "/",
-    };
+    const clearOptions = { domain: cookieDomain, path: "/" };
 
     res.clearCookie("accessToken", clearOptions);
     res.clearCookie("refreshToken", clearOptions);
@@ -223,10 +195,4 @@ const logout = async (req, res) => {
   }
 };
 
-module.exports = {
-  register,
-  login,
-  refreshAccessToken,
-  googleCallback,
-  logout,
-};
+module.exports = { register, login, refreshAccessToken, googleCallback, logout };
