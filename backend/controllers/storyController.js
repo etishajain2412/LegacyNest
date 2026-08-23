@@ -594,27 +594,27 @@ const getFamilyStories = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // 1. Get all family circles where user is a member
-    const circles = await FamilyCircle.find({
-      "members.user": userId,
-    }).select("_id");
+    const userCircles = await FamilyCircle.find({
+      $or: [{ createdBy: userId }, { "members.user": userId }],
+      isActive: true,
+    }).select("members createdBy");
 
-    const circleIds = circles.map((c) => c._id);
-    //console.log("Circle IDs:", circleIds);
-    if (!circleIds.length) {
-      return res.json([]);
-    }
+    const circleMemberIds = [
+      userId,
+      ...userCircles.flatMap((circle) => [
+        circle.createdBy,
+        ...circle.members.map((member) => member.user),
+      ]),
+    ];
 
-    // 2. Get stories only from those circles with visibility "family"
     const stories = await Story.find({
-      //visibility: "family",
-      familyCircle: { $in: circleIds },
+      visibility: "family",
+      userId: { $in: circleMemberIds },
     })
-      .populate("userId", "name email")
-      .populate("familyCircle", "name description")
+      .populate("userId", "name username")
       .sort({ createdAt: -1 });
-    console.log("Family Stories:", stories);
-    res.json(stories);
+
+    res.json({ success: true, stories });
   } catch (err) {
     console.error("Error fetching family stories:", err);
     res.status(500).json({ error: err.message });

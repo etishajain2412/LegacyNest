@@ -449,7 +449,7 @@ export default function FamilyCircles({ user, setUser }) {
                             {circle.description || "No description provided"}
                           </p>
                           <div className="flex justify-between text-sm text-gray-500 mb-4">
-                            <span>👥 {circle.members.length + 1} members</span>
+                            <span>👥 {circle.members.filter((member) => member.user._id !== circle.createdBy._id).length + 1} members</span>
                             <span>📅 {new Date(circle.createdAt).toLocaleDateString()}</span>
                           </div>
                           <div className="flex gap-2 flex-wrap">
@@ -846,7 +846,7 @@ export default function FamilyCircles({ user, setUser }) {
 
                   <div className="mb-8">
                     <h4 className="text-xl font-semibold text-gray-900 mb-4 font-serif">
-                      Members ({selectedCircle.members.length + 1})
+                      Members ({selectedCircle.members.filter((member) => member.user._id !== selectedCircle.createdBy._id).length + 1})
                     </h4>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
@@ -864,7 +864,9 @@ export default function FamilyCircles({ user, setUser }) {
                         </span>
                       </div>
 
-                      {selectedCircle.members.map((member) => (
+                      {selectedCircle.members
+                        .filter((member) => member.user._id !== selectedCircle.createdBy._id)
+                        .map((member) => (
                         <div key={member._id} className="flex justify-between items-center p-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-blue-700">

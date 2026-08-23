@@ -218,6 +218,10 @@ exports.processJoinRequest = async (req, res) => {
 
     const joinRequest = circle.joinRequests[requestIndex];
 
+    if (joinRequest.status !== "pending") {
+      return res.status(400).json({ message: "This join request has already been processed" });
+    }
+
     if (action === "approve") {
       circle.members.push({
         user: joinRequest.user,
@@ -702,7 +706,9 @@ exports.getUserPendingRequests = async (req, res) => {
           name: circle.name,
           description: circle.description,
           createdBy: circle.createdBy,
-          memberCount: circle.members.length + 1
+          memberCount: circle.members.filter(
+            member => member.user.toString() !== circle.createdBy.toString()
+          ).length + 1
         },
         request: userRequest,
         requestedAt: userRequest.requestedAt

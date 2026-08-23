@@ -85,7 +85,7 @@ export default function Timeline({ user }) {
         const endpoint =
           view === "mine"
             ? `/stories/mine/${user.id}`
-            : `/stories/`;
+            : `/stories/feed/family`;
 
         const { data } = await axiosInstance.get(endpoint);
 

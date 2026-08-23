@@ -42,10 +42,19 @@ const FeedPage = ({ user }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setStories(data.stories || []);
+      const feedStories = Array.isArray(data) ? data : data.stories || [];
 
-      const computedStats = computeStats(data.stories || []);
-      setStats(computedStats);
+      setStories(feedStories);
+
+      if (filter === "all") {
+        setStats(computeStats(feedStories));
+      } else if (!stats) {
+        const { data: allData } = await axiosInstance.get(endpoints.all, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const allStories = Array.isArray(allData) ? allData : allData.stories || [];
+        setStats(computeStats(allStories));
+      }
     } catch (error) {
       console.error("Error fetching feed stories:", error);
       setStories([]);
