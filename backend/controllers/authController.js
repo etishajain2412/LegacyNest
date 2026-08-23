@@ -2,16 +2,15 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User.js");
 
-// =====================================================
-// TOKEN GENERATION
-// =====================================================
+const ACCESS_COOKIE_MAX_AGE = 15 * 60 * 1000;
+const REFRESH_COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 const generateTokens = (userId) => {
   const accessToken = jwt.sign(
     { id: userId },
     process.env.JWT_ACCESS_SECRET,
     {
-      expiresIn: "7d",
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRATION || "15m",
     }
   );
 
@@ -19,24 +18,15 @@ const generateTokens = (userId) => {
     { id: userId },
     process.env.JWT_REFRESH_SECRET,
     {
-      expiresIn: "7d",
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRATION || "7d",
     }
   );
 
-  return {
-    accessToken,
-    refreshToken,
-  };
+  return { accessToken, refreshToken };
 };
 
-
-// =====================================================
-// COOKIE OPTIONS
-// =====================================================
-
 const getCookieOptions = (maxAge, httpOnly = true) => {
-  const isProduction =
-    process.env.NODE_ENV === "production";
+  const isProduction = process.env.NODE_ENV === "production";
 
   return {
     httpOnly,
@@ -46,46 +36,54 @@ const getCookieOptions = (maxAge, httpOnly = true) => {
   };
 };
 
+const setAuthCookies = (res, accessToken, refreshToken, userData) => {
+  res.cookie(
+    "accessToken",
+    accessToken,
+    getCookieOptions(ACCESS_COOKIE_MAX_AGE, true)
+  );
 
-// =====================================================
-// REGISTER
-// =====================================================
+  res.cookie(
+    "refreshToken",
+    refreshToken,
+    getCookieOptions(REFRESH_COOKIE_MAX_AGE, true)
+  );
+
+  res.cookie(
+    "user",
+    JSON.stringify(userData),
+    getCookieOptions(REFRESH_COOKIE_MAX_AGE, false)
+  );
+};
 
 const register = async (req, res) => {
   try {
-    const {
-      name,
-      username,
-      email,
-      password,
-    } = req.body;
+    const { name, username, email, password } = req.body;
 
-    if (
-      !name ||
-      !username ||
-      !email ||
-      !password
-    ) {
+    if (!name || !username || !email || !password) {
       return res.status(400).json({
         message: "All fields are required",
       });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedUsername = username.trim().toLowerCase();
+
     const existingUser = await User.findOne({
       $or: [
-        { email },
-        { username },
+        { email: normalizedEmail },
+        { username: normalizedUsername },
       ],
     });
 
     if (existingUser) {
-      if (existingUser.email === email) {
+      if (existingUser.email === normalizedEmail) {
         return res.status(400).json({
           message: "Email already exists",
         });
       }
 
-      if (existingUser.username === username) {
+      if (existingUser.username === normalizedUsername) {
         return res.status(400).json({
           message: "Username already exists",
         });
@@ -93,45 +91,18 @@ const register = async (req, res) => {
     }
 
     const newUser = new User({
-      name,
-      username,
-      email,
+      name: name.trim(),
+      username: normalizedUsername,
+      email: normalizedEmail,
       password,
     });
 
     await newUser.save();
 
-    const {
-      accessToken,
-      refreshToken,
-    } = generateTokens(newUser._id);
+    const { accessToken, refreshToken } = generateTokens(newUser._id);
 
-    await User.findByIdAndUpdate(
-      newUser._id,
-      {
-        refreshToken,
-      }
-    );
-
-    // Access token cookie - 7 days
-    res.cookie(
-      "accessToken",
-      accessToken,
-      getCookieOptions(
-        7 * 24 * 60 * 60 * 1000,
-        true
-      )
-    );
-
-    // Refresh token cookie - 7 days
-    res.cookie(
-      "refreshToken",
-      refreshToken,
-      getCookieOptions(
-        7 * 24 * 60 * 60 * 1000,
-        true
-      )
-    );
+    newUser.refreshToken = refreshToken;
+    await newUser.save();
 
     const userData = {
       id: newUser._id,
@@ -140,26 +111,19 @@ const register = async (req, res) => {
       email: newUser.email,
     };
 
-    // User cookie - 7 days
-    res.cookie(
-      "user",
-      JSON.stringify(userData),
-      getCookieOptions(
-        7 * 24 * 60 * 60 * 1000,
-        false
-      )
+    setAuthCookies(
+      res,
+      accessToken,
+      refreshToken,
+      userData
     );
 
     return res.status(201).json({
       message: "Registration successful",
       user: userData,
     });
-
   } catch (error) {
-    console.error(
-      "Error during registration:",
-      error
-    );
+    console.error("Registration error:", error);
 
     return res.status(500).json({
       message: "Internal server error",
@@ -167,22 +131,22 @@ const register = async (req, res) => {
   }
 };
 
-
-// =====================================================
-// LOGIN
-// =====================================================
-
 const login = async (req, res) => {
   try {
-    const {
-      identifier,
-      password,
-    } = req.body;
+    const { identifier, password } = req.body;
+
+    if (!identifier || !password) {
+      return res.status(400).json({
+        message: "Username/email and password are required",
+      });
+    }
+
+    const normalizedIdentifier = identifier.trim().toLowerCase();
 
     const user = await User.findOne({
       $or: [
-        { email: identifier },
-        { username: identifier },
+        { email: normalizedIdentifier },
+        { username: normalizedIdentifier },
       ],
     });
 
@@ -209,37 +173,10 @@ const login = async (req, res) => {
       });
     }
 
-    const {
-      accessToken,
-      refreshToken,
-    } = generateTokens(user._id);
+    const { accessToken, refreshToken } = generateTokens(user._id);
 
-    await User.findByIdAndUpdate(
-      user._id,
-      {
-        refreshToken,
-      }
-    );
-
-    // Access token - 7 days
-    res.cookie(
-      "accessToken",
-      accessToken,
-      getCookieOptions(
-        7 * 24 * 60 * 60 * 1000,
-        true
-      )
-    );
-
-    // Refresh token - 7 days
-    res.cookie(
-      "refreshToken",
-      refreshToken,
-      getCookieOptions(
-        7 * 24 * 60 * 60 * 1000,
-        true
-      )
-    );
+    user.refreshToken = refreshToken;
+    await user.save();
 
     const userData = {
       id: user._id,
@@ -248,29 +185,19 @@ const login = async (req, res) => {
       email: user.email,
     };
 
-    // User cookie - 7 days
-    res.cookie(
-      "user",
-      JSON.stringify(userData),
-      getCookieOptions(
-        7 * 24 * 60 * 60 * 1000,
-        false
-      )
+    setAuthCookies(
+      res,
+      accessToken,
+      refreshToken,
+      userData
     );
 
-    // IMPORTANT:
-    // Normal Axios login must return JSON.
-    // Do NOT redirect here.
     return res.status(200).json({
       message: "Login successful",
       user: userData,
     });
-
   } catch (error) {
-    console.error(
-      "Login error:",
-      error
-    );
+    console.error("Login error:", error);
 
     return res.status(500).json({
       message: "Internal server error",
@@ -278,15 +205,9 @@ const login = async (req, res) => {
   }
 };
 
-
-// =====================================================
-// REFRESH ACCESS TOKEN
-// =====================================================
-
 const refreshAccessToken = async (req, res) => {
   try {
-    const refreshToken =
-      req.cookies.refreshToken;
+    const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
       return res.status(401).json({
@@ -310,52 +231,32 @@ const refreshAccessToken = async (req, res) => {
       });
     }
 
-    // Generate new access token - 7 days
     const accessToken = jwt.sign(
-      {
-        id: user._id,
-      },
+      { id: user._id },
       process.env.JWT_ACCESS_SECRET,
       {
-        expiresIn: "7d",
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRATION || "15m",
       }
     );
 
-    // New access token cookie - 7 days
     res.cookie(
       "accessToken",
       accessToken,
-      getCookieOptions(
-        7 * 24 * 60 * 60 * 1000,
-        true
-      )
+      getCookieOptions(ACCESS_COOKIE_MAX_AGE, true)
     );
 
     return res.status(200).json({
       message: "Access token refreshed",
     });
-
   } catch (error) {
-    console.error(
-      "Token refresh error:",
-      error
-    );
+    console.error("Token refresh error:", error);
 
     if (
-      error.name ===
-      "JsonWebTokenError"
+      error.name === "JsonWebTokenError" ||
+      error.name === "TokenExpiredError"
     ) {
       return res.status(403).json({
-        message: "Invalid refresh token",
-      });
-    }
-
-    if (
-      error.name ===
-      "TokenExpiredError"
-    ) {
-      return res.status(403).json({
-        message: "Refresh token expired",
+        message: "Invalid or expired refresh token",
       });
     }
 
@@ -365,34 +266,25 @@ const refreshAccessToken = async (req, res) => {
   }
 };
 
-
-// =====================================================
-// GOOGLE CALLBACK
-// =====================================================
-
 const googleCallback = async (req, res) => {
+  const frontendUrl = process.env.FRONTEND_URL;
+
   try {
+    if (!frontendUrl) {
+      console.error("FRONTEND_URL is not configured");
+
+      return res.status(500).json({
+        message: "Frontend URL is not configured",
+      });
+    }
+
     const user = req.user;
 
-    const isProduction =
-      process.env.NODE_ENV === "production";
-
-    const frontendUrl = isProduction
-      ? process.env.FRONTEND_URL_PROD
-      : process.env.FRONTEND_URL_DEV ||
-        "http://localhost:3000";
-
-    // Google authentication failed
     if (!user) {
       const errorMessage =
-        req.authInfo?.message ||
-        "Authentication failed";
+        req.authInfo?.message || "Authentication failed";
 
-      if (
-        errorMessage.includes(
-          "Please login instead"
-        )
-      ) {
+      if (errorMessage.includes("Please login instead")) {
         return res.redirect(
           `${frontendUrl}/login?error=${encodeURIComponent(
             "Account already exists. Please login instead."
@@ -400,11 +292,7 @@ const googleCallback = async (req, res) => {
         );
       }
 
-      if (
-        errorMessage.includes(
-          "Please register first"
-        )
-      ) {
+      if (errorMessage.includes("Please register first")) {
         return res.redirect(
           `${frontendUrl}/register?error=${encodeURIComponent(
             "No account found. Please register first."
@@ -419,37 +307,11 @@ const googleCallback = async (req, res) => {
       );
     }
 
-    const {
-      accessToken,
-      refreshToken,
-    } = generateTokens(user._id);
+    const { accessToken, refreshToken } =
+      generateTokens(user._id);
 
-    await User.findByIdAndUpdate(
-      user._id,
-      {
-        refreshToken,
-      }
-    );
-
-    // Access token - 7 days
-    res.cookie(
-      "accessToken",
-      accessToken,
-      getCookieOptions(
-        7 * 24 * 60 * 60 * 1000,
-        true
-      )
-    );
-
-    // Refresh token - 7 days
-    res.cookie(
-      "refreshToken",
-      refreshToken,
-      getCookieOptions(
-        7 * 24 * 60 * 60 * 1000,
-        true
-      )
-    );
+    user.refreshToken = refreshToken;
+    await user.save();
 
     const userData = {
       id: user._id,
@@ -458,35 +320,22 @@ const googleCallback = async (req, res) => {
       email: user.email,
     };
 
-    // User cookie - 7 days
-    res.cookie(
-      "user",
-      JSON.stringify(userData),
-      getCookieOptions(
-        7 * 24 * 60 * 60 * 1000,
-        false
-      )
+    setAuthCookies(
+      res,
+      accessToken,
+      refreshToken,
+      userData
     );
 
-    // Google OAuth is a browser redirect,
-    // so redirect is correct here.
-    return res.redirect(
-      `${frontendUrl}/profile`
-    );
-
+    return res.redirect(`${frontendUrl}/profile`);
   } catch (error) {
-    console.error(
-      "Google authentication error:",
-      error
-    );
+    console.error("Google authentication error:", error);
 
-    const isProduction =
-      process.env.NODE_ENV === "production";
-
-    const frontendUrl = isProduction
-      ? process.env.FRONTEND_URL_PROD
-      : process.env.FRONTEND_URL_DEV ||
-        "http://localhost:3000";
+    if (!frontendUrl) {
+      return res.status(500).json({
+        message: "Authentication failed",
+      });
+    }
 
     return res.redirect(
       `${frontendUrl}/login?error=${encodeURIComponent(
@@ -496,82 +345,66 @@ const googleCallback = async (req, res) => {
   }
 };
 
-
-// =====================================================
-// LOGOUT
-// =====================================================
-
 const logout = async (req, res) => {
   try {
-    const refreshToken =
-      req.cookies.refreshToken;
+    const refreshToken = req.cookies.refreshToken;
 
     if (refreshToken) {
-      const decoded =
-        jwt.decode(refreshToken);
+      try {
+        const decoded = jwt.decode(refreshToken);
 
-      if (decoded?.id) {
-        await User.findByIdAndUpdate(
-          decoded.id,
-          {
-            refreshToken: null,
-          }
-        );
+        if (decoded?.id) {
+          await User.findByIdAndUpdate(
+            decoded.id,
+            { refreshToken: null }
+          );
+        }
+      } catch (error) {
+        console.error("Error decoding refresh token:", error);
       }
     }
 
     const isProduction =
       process.env.NODE_ENV === "production";
 
-    const clearCookieOptions = {
+    const authCookieOptions = {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction
-        ? "none"
-        : "lax",
+      sameSite: isProduction ? "none" : "lax",
+    };
+
+    const userCookieOptions = {
+      httpOnly: false,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
     };
 
     res.clearCookie(
       "accessToken",
-      clearCookieOptions
+      authCookieOptions
     );
 
     res.clearCookie(
       "refreshToken",
-      clearCookieOptions
+      authCookieOptions
     );
 
     res.clearCookie(
       "user",
-      {
-        httpOnly: false,
-        secure: isProduction,
-        sameSite: isProduction
-          ? "none"
-          : "lax",
-      }
+      userCookieOptions
     );
 
     return res.status(200).json({
       message: "Logged out successfully",
     });
-
   } catch (error) {
-    console.error(
-      "Logout error:",
-      error
-    );
+    console.error("Logout error:", error);
 
     return res.status(500).json({
       message: "Internal server error",
     });
   }
 };
-
-
-// =====================================================
-// EXPORTS
-// =====================================================
 
 module.exports = {
   register,
