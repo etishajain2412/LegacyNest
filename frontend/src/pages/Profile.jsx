@@ -18,10 +18,6 @@ const Profile = ({ user, setUser }) => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // ============================================================
-  // FETCH COMPLETE PROFILE
-  // ============================================================
-
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -37,10 +33,8 @@ const Profile = ({ user, setUser }) => {
         console.log("Profile received from backend:", profileUser);
         console.log("Birth year:", profileUser.birthYear);
 
-        // Update global user state
         setUser(profileUser);
 
-        // Update local states
         setName(profileUser.name || "");
         setBirthYear(profileUser.birthYear ?? "");
       } catch (error) {
@@ -58,20 +52,12 @@ const Profile = ({ user, setUser }) => {
     fetchProfile();
   }, [setUser]);
 
-  // ============================================================
-  // KEEP LOCAL STATE SYNCHRONIZED WITH USER
-  // ============================================================
-
   useEffect(() => {
     if (user) {
       setName(user.name || "");
       setBirthYear(user.birthYear ?? "");
     }
   }, [user]);
-
-  // ============================================================
-  // UPDATE NAME
-  // ============================================================
 
   const handleUpdateName = async (e) => {
     e.preventDefault();
@@ -118,10 +104,6 @@ const Profile = ({ user, setUser }) => {
       setLoading(false);
     }
   };
-
-  // ============================================================
-  // UPDATE BIRTH YEAR
-  // ============================================================
 
   const handleUpdateBirthYear = async (e) => {
     e.preventDefault();
@@ -190,10 +172,6 @@ const Profile = ({ user, setUser }) => {
     }
   };
 
-  // ============================================================
-  // UPDATE PASSWORD
-  // ============================================================
-
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
 
@@ -240,10 +218,6 @@ const Profile = ({ user, setUser }) => {
     }
   };
 
-  // ============================================================
-  // LOADING
-  // ============================================================
-
   if (profileLoading) {
     return (
       <div className="min-h-screen bg-gray-100 py-8">
@@ -256,23 +230,15 @@ const Profile = ({ user, setUser }) => {
     );
   }
 
-  // ============================================================
-  // UI
-  // ============================================================
-
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="max-w-4xl mx-auto px-4">
-
-        {/* SUCCESS MESSAGE */}
 
         {message && (
           <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6 text-center font-medium">
             {message}
           </div>
         )}
-
-        {/* ERROR MESSAGE */}
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6 text-center font-medium">
@@ -290,93 +256,57 @@ const Profile = ({ user, setUser }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
-            {/* ================================================= */}
-            {/* LEFT SIDE */}
-            {/* ================================================= */}
-
             <div className="md:col-span-1">
-
               <div className="text-center">
-
                 <div className="w-32 h-32 bg-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl font-bold text-white">
                   {user?.name?.charAt(0).toUpperCase()}
                 </div>
-
                 <h2 className="text-xl font-semibold">
                   {user?.name}
                 </h2>
-
                 <p className="text-gray-600">
                   @{user?.username}
                 </p>
-
                 <p className="text-gray-600">
                   {user?.email}
                 </p>
-
-                {user?.isOAuthUser && (
-                  <p className="text-sm text-blue-600 mt-2">
-                    Signed in with Google
-                  </p>
-                )}
-
               </div>
-
             </div>
 
-            {/* ================================================= */}
-            {/* RIGHT SIDE */}
-            {/* ================================================= */}
-
             <div className="md:col-span-2">
-
               <div className="space-y-6">
-
                 <div>
-
                   <h3 className="text-lg font-semibold mb-4 font-serif">
                     Account Settings
                   </h3>
 
-                  {/* ================================================= */}
-                  {/* NAME */}
-                  {/* ================================================= */}
-
                   <div className="bg-gray-50 p-4 rounded-lg border-2 border-black">
-
                     {!editName ? (
                       <div className="flex justify-between items-center">
-
                         <div>
                           <p className="font-medium">
                             Name
                           </p>
-
                           <p className="text-gray-600">
                             {user?.name}
                           </p>
                         </div>
-
                         <button
                           onClick={() => setEditName(true)}
                           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
                         >
                           Change Name
                         </button>
-
                       </div>
                     ) : (
                       <form
                         onSubmit={handleUpdateName}
                         className="space-y-4"
                       >
-
                         <div>
-
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Name
                           </label>
-
                           <input
                             type="text"
                             value={name}
@@ -386,11 +316,8 @@ const Profile = ({ user, setUser }) => {
                             className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
                             required
                           />
-
                         </div>
-
                         <div className="flex gap-4">
-
                           <button
                             type="submit"
                             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
@@ -400,7 +327,6 @@ const Profile = ({ user, setUser }) => {
                               ? "Updating..."
                               : "Save Name"}
                           </button>
-
                           <button
                             type="button"
                             onClick={() => {
@@ -411,31 +337,19 @@ const Profile = ({ user, setUser }) => {
                           >
                             Cancel
                           </button>
-
                         </div>
-
                       </form>
                     )}
-
                   </div>
 
-                  {/* ================================================= */}
-                  {/* BIRTH YEAR */}
-                  {/* ================================================= */}
-
                   <div className="bg-gray-50 p-4 rounded-lg mt-4 border-2 border-black">
-
                     {!editBirthYear ? (
                       <div className="flex justify-between items-center">
-
                         <div>
-
                           <p className="font-medium">
                             Birth Year
                           </p>
-
                           <p className="text-gray-600">
-
                             {user?.birthYear !== undefined &&
                             user?.birthYear !== null &&
                             user?.birthYear !== ""
@@ -445,11 +359,8 @@ const Profile = ({ user, setUser }) => {
                                     Number(user.birthYear)
                                 })`
                               : "Not set"}
-
                           </p>
-
                         </div>
-
                         <button
                           onClick={() =>
                             setEditBirthYear(true)
@@ -460,20 +371,16 @@ const Profile = ({ user, setUser }) => {
                             ? "Change Birth Year"
                             : "Add Birth Year"}
                         </button>
-
                       </div>
                     ) : (
                       <form
                         onSubmit={handleUpdateBirthYear}
                         className="space-y-4"
                       >
-
                         <div>
-
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Birth Year
                           </label>
-
                           <input
                             type="number"
                             value={birthYear}
@@ -485,11 +392,8 @@ const Profile = ({ user, setUser }) => {
                             max={new Date().getFullYear()}
                             required
                           />
-
                         </div>
-
                         <div className="flex gap-4">
-
                           <button
                             type="submit"
                             className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
@@ -501,7 +405,6 @@ const Profile = ({ user, setUser }) => {
                               ? "Update Birth Year"
                               : "Save Birth Year"}
                           </button>
-
                           <button
                             type="button"
                             onClick={() => {
@@ -514,37 +417,24 @@ const Profile = ({ user, setUser }) => {
                           >
                             Cancel
                           </button>
-
                         </div>
-
                       </form>
                     )}
-
                   </div>
 
-                  {/* ================================================= */}
-                  {/* PASSWORD */}
-                  {/* ================================================= */}
-
                   <div className="bg-gray-50 p-4 rounded-lg mt-4 border-2 border-black">
-
                     {!changePassword ? (
                       <div className="flex justify-between items-center">
-
                         <div>
-
                           <p className="font-medium">
                             Password
                           </p>
-
                           <p className="text-gray-600">
                             {user?.isOAuthUser
                               ? "Set a password to enable email login"
                               : "••••••••"}
                           </p>
-
                         </div>
-
                         <button
                           onClick={() =>
                             setChangePassword(true)
@@ -555,26 +445,21 @@ const Profile = ({ user, setUser }) => {
                             ? "Set Password"
                             : "Change Password"}
                         </button>
-
                       </div>
                     ) : (
                       <form
                         onSubmit={handleUpdatePassword}
                         className="space-y-4"
                       >
-
                         <div>
-
                           <p className="text-sm text-gray-600 mb-4">
                             {user?.isOAuthUser
                               ? "Set a password to enable email/password login"
                               : "Change your password"}
                           </p>
-
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             New Password
                           </label>
-
                           <input
                             type="password"
                             value={newPassword}
@@ -585,15 +470,11 @@ const Profile = ({ user, setUser }) => {
                             placeholder="Enter new password"
                             required
                           />
-
                         </div>
-
                         <div>
-
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Confirm New Password
                           </label>
-
                           <input
                             type="password"
                             value={confirmPassword}
@@ -604,11 +485,8 @@ const Profile = ({ user, setUser }) => {
                             placeholder="Confirm new password"
                             required
                           />
-
                         </div>
-
                         <div className="flex gap-4">
-
                           <button
                             type="submit"
                             className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
@@ -620,7 +498,6 @@ const Profile = ({ user, setUser }) => {
                               ? "Set Password"
                               : "Update Password"}
                           </button>
-
                           <button
                             type="button"
                             onClick={() => {
@@ -632,24 +509,16 @@ const Profile = ({ user, setUser }) => {
                           >
                             Cancel
                           </button>
-
                         </div>
-
                       </form>
                     )}
-
                   </div>
-
                 </div>
-
               </div>
-
             </div>
 
           </div>
-
         </div>
-
       </div>
     </div>
   );

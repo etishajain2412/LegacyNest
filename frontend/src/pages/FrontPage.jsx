@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
+import axiosInstance from "../utils/axiosInstance";
 
 function FrontPage({ user, setUser }) {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ function FrontPage({ user, setUser }) {
   useEffect(() => {
     const interval = setInterval(() => {
       setPlaceholderIndex((prev) => (prev + 1) % featurePlaceholders.length);
-    }, 2500); 
+    }, 2500);
     return () => clearInterval(interval);
   }, []);
 
@@ -45,56 +46,7 @@ function FrontPage({ user, setUser }) {
     }
   };
 
-  const recentlyAddedPosts = [
-    {
-      id: 1,
-      title: "Autumn Collection",
-      description: "Warm hues and cozy fabrics for the season.",
-      image:
-        "https://i.pinimg.com/736x/99/86/2c/99862c0e0662aa2efa0114dca43a16c4.jpg",
-      tags: ["fall", "fashion", "warm", "seasonal"],
-    },
-    {
-      id: 2,
-      title: "Summer Collection",
-      description: "Bright colors and light textures.",
-      image:
-        "https://i.pinimg.com/736x/29/dc/22/29dc22bcba28ac2d5acbbafdd2642c54.jpg",
-      tags: ["summer", "light", "beach", "vibrant"],
-    },
-    {
-      id: 3,
-      title: "Museum Art in Your Home",
-      description: "Poster art for every mood.",
-      image:
-        "https://i.pinimg.com/1200x/57/9f/64/579f64ef67cef27fa1eab073b54ba403.jpg",
-      tags: ["art", "poster", "museum", "decor"],
-    },
-    {
-      id: 4,
-      title: "Autumn Collection",
-      description: "Warm hues and cozy fabrics for the season.",
-      image:
-        "https://i.pinimg.com/736x/99/86/2c/99862c0e0662aa2efa0114dca43a16c4.jpg",
-      tags: ["fall", "fashion", "warm", "seasonal"],
-    },
-    {
-      id: 5,
-      title: "Summer Collection",
-      description: "Bright colors and light textures.",
-      image:
-        "https://i.pinimg.com/736x/29/dc/22/29dc22bcba28ac2d5acbbafdd2642c54.jpg",
-      tags: ["summer", "light", "beach", "vibrant"],
-    },
-    {
-      id: 6,
-      title: "Museum Art in Your Home",
-      description: "Poster art for every mood.",
-      image:
-        "https://i.pinimg.com/1200x/57/9f/64/579f64ef67cef27fa1eab073b54ba403.jpg",
-      tags: ["art", "poster", "museum", "decor"],
-    },
-  ];
+  const recentlyAddedPosts = [];
 
   const filteredPosts = recentlyAddedPosts.filter((post) => {
     const query = searchQuery.toLowerCase();
@@ -129,7 +81,6 @@ function FrontPage({ user, setUser }) {
                 >
                   Profile
                 </p>
-                
                 <p
                   className="p-2 hover:bg-gray-100 border-1 border-black cursor-pointer"
                   onClick={() => navigate("/matches")}
@@ -142,23 +93,34 @@ function FrontPage({ user, setUser }) {
                 >
                   Family Feed
                 </p>
-                                <p
+                <p
                   className="p-2 hover:bg-gray-100 border-1 border-black cursor-pointer"
                   onClick={() => navigate("/feed")}
                 >
                   Feed
                 </p>
-                
-                <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={()=>navigate("/circles")}>
+                <p
+                  className="p-2 hover:bg-gray-100 border-1 border-black cursor-pointer"
+                  onClick={() => navigate("/circles")}
+                >
                   Circles
                 </p>
-                <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={()=>navigate("/familychatbot")}>
+                <p
+                  className="p-2 hover:bg-gray-100 border-1 border-black cursor-pointer"
+                  onClick={() => navigate("/familychatbot")}
+                >
                   Family Chatbot
                 </p>
-                <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={()=>navigate("/familyroom")}>
+                <p
+                  className="p-2 hover:bg-gray-100 border-1 border-black cursor-pointer"
+                  onClick={() => navigate("/familyroom")}
+                >
                   Family Room
                 </p>
-                <p className="p-2 hover:bg-gray-100 border-1 border-black  cursor-pointer" onClick={handleLogout}>
+                <p
+                  className="p-2 hover:bg-gray-100 border-1 border-black cursor-pointer"
+                  onClick={handleLogout}
+                >
                   Logout
                 </p>
               </div>
@@ -183,7 +145,7 @@ function FrontPage({ user, setUser }) {
 
         <div
           onClick={() => navigate("/upload")}
-          className="p-6 border-2 shadow  border-black cursor-pointer text-center transition"
+          className="p-6 border-2 shadow border-black cursor-pointer text-center transition"
         >
           <img
             src="https://i.pinimg.com/1200x/58/81/ce/5881ce3a72ed1d557bb446daeb4b60b2.jpg"
@@ -196,7 +158,7 @@ function FrontPage({ user, setUser }) {
 
         <div
           onClick={() => navigate("/prompts")}
-          className="p-6 border-2 shadow  border-black cursor-pointer text-center transition"
+          className="p-6 border-2 shadow border-black cursor-pointer text-center transition"
         >
           <img
             src="https://i.pinimg.com/736x/8d/84/22/8d842231a3b501d5c4f72f87e9b989b6.jpg"
@@ -239,7 +201,7 @@ function FrontPage({ user, setUser }) {
 
           <div
             onClick={() => navigate("/circles")}
-            className="p-6 border-2 shadow  border-black cursor-pointer text-center transition"
+            className="p-6 border-2 shadow border-black cursor-pointer text-center transition"
           >
             <img
               src="https://i.pinimg.com/1200x/1d/6e/92/1d6e92a0254877af6e2a089e8c52b977.jpg"
@@ -254,7 +216,7 @@ function FrontPage({ user, setUser }) {
 
           <div
             onClick={() => navigate("/calendar")}
-            className="p-6 border-2 shadow  border-black cursor-pointer text-center transition"
+            className="p-6 border-2 shadow border-black cursor-pointer text-center transition"
           >
             <img
               src="https://i.pinimg.com/1200x/76/2d/88/762d88957e42826729834d62212ab6c3.jpg"
@@ -301,9 +263,7 @@ function FrontPage({ user, setUser }) {
               </div>
             ))
           ) : (
-            <p className="text-gray-500 text-center col-span-full">
-              No posts match your search.
-            </p>
+            <p className="text-gray-500 col-span-full text-center"></p>
           )}
         </div>
       </div>
