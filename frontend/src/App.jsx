@@ -13,6 +13,7 @@ import FamilyCircles from "./pages/FamilyCircles";
 import FeedPage from "./pages/FeedPage";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
+import axiosInstance from "./utils/axiosInstance";
 import PromptsPage from "./pages/PromptsPage"; 
 import MatchesPage from "./pages/MatchesPage";
 import FamilyFeed from "./pages/FamilyFeed";
@@ -24,8 +25,11 @@ import CalendarPage from "./pages/Calendar";
 import StoryReport from "./pages/StoryReport";
 import StoriesByCategory from "./pages/StoriesByCategory";
 
-function ProtectedRoute({ user, children }) {
-  console.log(user);
+function ProtectedRoute({ user, authLoading, children }) {
+  if (authLoading) {
+    return null;
+  }
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -34,20 +38,41 @@ function ProtectedRoute({ user, children }) {
 
 export default function App() {
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    const userCookie = Cookies.get("user");
-    const accessToken = Cookies.get("accessToken");
-
-    if (userCookie) {
+    const hydrateUser = async () => {
       try {
-        const userData = JSON.parse(userCookie);
-        setUser(userData);
+        const response = await fetch(
+          `${axiosInstance.defaults.baseURL}/profile`,
+          { credentials: "include" }
+        );
+
+        if (response.ok) {
+          setUser(await response.json());
+          return;
+        }
+
+        setUser(null);
       } catch (error) {
-        Cookies.remove("user");
-        Cookies.remove("accessToken");
+        const userCookie = Cookies.get("user");
+
+        if (userCookie) {
+          try {
+            setUser(JSON.parse(userCookie));
+          } catch (parseError) {
+            Cookies.remove("user");
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+      } finally {
+        setAuthLoading(false);
       }
-    }
+    };
+
+    hydrateUser();
   }, []);
 
   return (
@@ -60,7 +85,7 @@ export default function App() {
         <Route
           path="/profilepage"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <Profile user={user} setUser={setUser} />
             </ProtectedRoute>
           }
@@ -69,7 +94,7 @@ export default function App() {
         <Route
           path="/profile"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <FrontPage user={user} setUser={setUser} />
             </ProtectedRoute>
           }
@@ -78,7 +103,7 @@ export default function App() {
         <Route
           path="/upload"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <Upload user={user} />
             </ProtectedRoute>
           }
@@ -87,7 +112,7 @@ export default function App() {
         <Route
           path="/timeline"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <Timeline user={user} />
             </ProtectedRoute>
           }
@@ -96,7 +121,7 @@ export default function App() {
         <Route
           path="/stories"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <Stories user={user} />
             </ProtectedRoute>
           }
@@ -105,7 +130,7 @@ export default function App() {
         <Route
           path="/circles"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <FamilyCircles user={user} />
             </ProtectedRoute>
           }
@@ -113,7 +138,7 @@ export default function App() {
 <Route
   path="/familyroom"
   element={
-    <ProtectedRoute user={user}>
+    <ProtectedRoute user={user} authLoading={authLoading}>
       <FamilyRoom user={user} />
     </ProtectedRoute>
   }
@@ -122,19 +147,19 @@ export default function App() {
 <Route
   path="/familychatbot"
   element={
-    <ProtectedRoute user={user}>
+    <ProtectedRoute user={user} authLoading={authLoading}>
       <FamilyChatbot user={user} />
     </ProtectedRoute>
   }
 />
 
-        <Route path="/feed" element={<ProtectedRoute user={user}><FeedPage user={user} /> </ProtectedRoute>} />
+        <Route path="/feed" element={<ProtectedRoute user={user} authLoading={authLoading}><FeedPage user={user} /> </ProtectedRoute>} />
 
 
         <Route
           path="/stories/view/:id"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <ViewStory user={user} />
             </ProtectedRoute>
           }
@@ -143,7 +168,7 @@ export default function App() {
         <Route
           path="/stories/edit/:id"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <EditStory user={user} />
             </ProtectedRoute>
           }
@@ -152,7 +177,7 @@ export default function App() {
         <Route
           path="/stories/ai/:id"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <StoryReport user={user} />
             </ProtectedRoute>
           }
@@ -160,7 +185,7 @@ export default function App() {
         <Route
           path="/stories/categories"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <StoriesByCategory user={user} />
             </ProtectedRoute>
           }
@@ -169,7 +194,7 @@ export default function App() {
         <Route
           path="/calendar"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <CalendarPage user={user} />
             </ProtectedRoute>
           }
@@ -177,7 +202,7 @@ export default function App() {
         <Route
           path="/prompts"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <PromptsPage user={user} />
             </ProtectedRoute>
           }
@@ -185,7 +210,7 @@ export default function App() {
         <Route
           path="/matches"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <MatchesPage user={user} />
             </ProtectedRoute>
           }
@@ -193,7 +218,7 @@ export default function App() {
         <Route
           path="/familyfeed"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute user={user} authLoading={authLoading}>
               <FamilyFeed user={user} />
             </ProtectedRoute>
           }

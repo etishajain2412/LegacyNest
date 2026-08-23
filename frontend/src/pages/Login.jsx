@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
-import Cookies from "js-cookie";
 
 const Login = ({ setUser }) => {
   const [formData, setFormData] = useState({
@@ -16,16 +15,15 @@ const Login = ({ setUser }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Handle OAuth errors coming back from Google
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const error = params.get("error");
 
     if (error) {
       setErrorMessage(error);
-    } else if (Cookies.get("user") && !location.state?.fromApp) {
-      navigate("/profile");
     }
-  }, [location, navigate]);
+  }, [location.search]);
 
   const handleChange = (e) => {
     setFormData({
@@ -33,6 +31,10 @@ const Login = ({ setUser }) => {
       [e.target.name]: e.target.value,
     });
   };
+
+  // ============================
+  // NORMAL LOGIN
+  // ============================
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,23 +45,21 @@ const Login = ({ setUser }) => {
     try {
       const response = await axiosInstance.post(
         "/auth/login",
-        formData
+        formData,
+        {
+          withCredentials: true,
+        }
       );
+
+      console.log("Login response:", response.data);
 
       const { user } = response.data;
 
-      // Store user information for frontend state
-      Cookies.set("user", JSON.stringify(user), {
-        expires: 2,
-        secure: window.location.protocol === "https:",
-        sameSite: "lax",
-      });
-
+      // Store user ONLY in React state.
+      // Authentication itself is handled by httpOnly cookies.
       setUser(user);
 
-      // Backend has already set the httpOnly
-      // accessToken and refreshToken cookies
-      navigate("/profile");
+      navigate("/profile", { replace: true });
     } catch (error) {
       console.error("Login error:", error);
 
@@ -71,8 +71,17 @@ const Login = ({ setUser }) => {
     }
   };
 
+  // ============================
+  // GOOGLE LOGIN
+  // ============================
+
   const handleGoogleLogin = () => {
-    window.location.href = `${axiosInstance.defaults.baseURL}/auth/google?state=login`;
+    const googleLoginUrl =
+      `${axiosInstance.defaults.baseURL}/auth/google?state=login`;
+
+    console.log("Redirecting to Google:", googleLoginUrl);
+
+    window.location.href = googleLoginUrl;
   };
 
   return (
@@ -84,6 +93,7 @@ const Login = ({ setUser }) => {
       }}
     >
       <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md border-2 border-black">
+
         <h2 className="text-2xl font-bold text-center mb-2 font-serif">
           Login
         </h2>
@@ -98,8 +108,12 @@ const Login = ({ setUser }) => {
           </div>
         )}
 
+        {/* ================= FORM ================= */}
+
         <form onSubmit={handleSubmit} className="space-y-3">
+
           {/* Email / Username */}
+
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Email or Username
@@ -117,12 +131,14 @@ const Login = ({ setUser }) => {
           </div>
 
           {/* Password */}
+
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Password
             </label>
 
             <div className="relative">
+
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
@@ -142,10 +158,12 @@ const Login = ({ setUser }) => {
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
+
             </div>
           </div>
 
           {/* Login Button */}
+
           <button
             type="submit"
             className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
@@ -153,10 +171,13 @@ const Login = ({ setUser }) => {
           >
             {loading ? "Logging in..." : "Login"}
           </button>
+
         </form>
 
-        {/* OR */}
+        {/* ================= OR ================= */}
+
         <div className="flex items-center my-4">
+
           <div className="flex-grow h-px bg-gray-300"></div>
 
           <span className="px-2 text-gray-500 text-sm">
@@ -164,10 +185,13 @@ const Login = ({ setUser }) => {
           </span>
 
           <div className="flex-grow h-px bg-gray-300"></div>
+
         </div>
 
-        {/* Google Login */}
+        {/* ================= GOOGLE LOGIN ================= */}
+
         <button
+          type="button"
           onClick={handleGoogleLogin}
           className="w-full flex items-center justify-center gap-2 border py-2 rounded hover:bg-gray-100 transition"
         >
@@ -180,16 +204,21 @@ const Login = ({ setUser }) => {
           <span>Sign in with Google</span>
         </button>
 
-        {/* Register */}
+        {/* ================= REGISTER ================= */}
+
         <p className="text-sm text-center mt-4">
+
           Don't have an account?{" "}
+
           <Link
             to="/register"
             className="text-green-600 hover:underline font-medium"
           >
             Register
           </Link>
+
         </p>
+
       </div>
     </div>
   );
