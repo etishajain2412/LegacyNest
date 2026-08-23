@@ -2,86 +2,244 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User.js");
 
+// =====================================================
+// TOKEN GENERATION
+// =====================================================
+
 const generateTokens = (userId) => {
-  const accessToken = jwt.sign({ id: userId }, process.env.JWT_ACCESS_SECRET, { expiresIn: "48h" });
-  const refreshToken = jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
-  return { accessToken, refreshToken };
+  const accessToken = jwt.sign(
+    { id: userId },
+    process.env.JWT_ACCESS_SECRET,
+    {
+      expiresIn: "7d",
+    }
+  );
+
+  const refreshToken = jwt.sign(
+    { id: userId },
+    process.env.JWT_REFRESH_SECRET,
+    {
+      expiresIn: "7d",
+    }
+  );
+
+  return {
+    accessToken,
+    refreshToken,
+  };
 };
+
+
+// =====================================================
+// COOKIE OPTIONS
+// =====================================================
+
+const getCookieOptions = (maxAge, httpOnly = true) => {
+  const isProduction =
+    process.env.NODE_ENV === "production";
+
+  return {
+    httpOnly,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    maxAge,
+  };
+};
+
+
+// =====================================================
+// REGISTER
+// =====================================================
 
 const register = async (req, res) => {
   try {
-    const { name, username, email, password } = req.body;
-    if (!name || !username || !email || !password)
-      return res.status(400).json({ message: "All fields are required" });
+    const {
+      name,
+      username,
+      email,
+      password,
+    } = req.body;
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: "Email already exists" });
+    if (
+      !name ||
+      !username ||
+      !email ||
+      !password
+    ) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
+    }
 
-    const newUser = new User({ name, username, email, password });
+    const existingUser = await User.findOne({
+      $or: [
+        { email },
+        { username },
+      ],
+    });
+
+    if (existingUser) {
+      if (existingUser.email === email) {
+        return res.status(400).json({
+          message: "Email already exists",
+        });
+      }
+
+      if (existingUser.username === username) {
+        return res.status(400).json({
+          message: "Username already exists",
+        });
+      }
+    }
+
+    const newUser = new User({
+      name,
+      username,
+      email,
+      password,
+    });
+
     await newUser.save();
 
-    const { accessToken, refreshToken } = generateTokens(newUser._id);
-    await User.findByIdAndUpdate(newUser._id, { refreshToken });
+    const {
+      accessToken,
+      refreshToken,
+    } = generateTokens(newUser._id);
 
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 48 * 60 * 1000,
-    });
+    await User.findByIdAndUpdate(
+      newUser._id,
+      {
+        refreshToken,
+      }
+    );
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    // Access token cookie - 7 days
+    res.cookie(
+      "accessToken",
+      accessToken,
+      getCookieOptions(
+        7 * 24 * 60 * 60 * 1000,
+        true
+      )
+    );
 
-    res.status(201).json({
+    // Refresh token cookie - 7 days
+    res.cookie(
+      "refreshToken",
+      refreshToken,
+      getCookieOptions(
+        7 * 24 * 60 * 60 * 1000,
+        true
+      )
+    );
+
+    const userData = {
+      id: newUser._id,
+      name: newUser.name,
+      username: newUser.username,
+      email: newUser.email,
+    };
+
+    // User cookie - 7 days
+    res.cookie(
+      "user",
+      JSON.stringify(userData),
+      getCookieOptions(
+        7 * 24 * 60 * 60 * 1000,
+        false
+      )
+    );
+
+    return res.status(201).json({
       message: "Registration successful",
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        username: newUser.username,
-        email: newUser.email,
-      },
+      user: userData,
     });
+
   } catch (error) {
-    console.error("Error during registration:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error(
+      "Error during registration:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
   }
 };
 
+
+// =====================================================
+// LOGIN
+// =====================================================
+
 const login = async (req, res) => {
   try {
-    const { identifier, password } = req.body;
+    const {
+      identifier,
+      password,
+    } = req.body;
+
     const user = await User.findOne({
-      $or: [{ email: identifier }, { username: identifier }],
+      $or: [
+        { email: identifier },
+        { username: identifier },
+      ],
     });
 
-    if (!user) return res.status(400).json({ message: "User not found" });
-    if (!user.password)
-      return res.status(400).json({ message: "Please use Google to login" });
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found",
+      });
+    }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+    if (!user.password) {
+      return res.status(400).json({
+        message: "Please use Google to login",
+      });
+    }
 
-    const { accessToken, refreshToken } = generateTokens(user._id);
-    await User.findByIdAndUpdate(user._id, { refreshToken });
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
 
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 48 * 60 * 1000,
-    });
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Invalid credentials",
+      });
+    }
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    const {
+      accessToken,
+      refreshToken,
+    } = generateTokens(user._id);
+
+    await User.findByIdAndUpdate(
+      user._id,
+      {
+        refreshToken,
+      }
+    );
+
+    // Access token - 7 days
+    res.cookie(
+      "accessToken",
+      accessToken,
+      getCookieOptions(
+        7 * 24 * 60 * 60 * 1000,
+        true
+      )
+    );
+
+    // Refresh token - 7 days
+    res.cookie(
+      "refreshToken",
+      refreshToken,
+      getCookieOptions(
+        7 * 24 * 60 * 60 * 1000,
+        true
+      )
+    );
 
     const userData = {
       id: user._id,
@@ -90,83 +248,208 @@ const login = async (req, res) => {
       email: user.email,
     };
 
-    res.cookie("user", JSON.stringify(userData), {
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 48 * 60 * 1000,
+    // User cookie - 7 days
+    res.cookie(
+      "user",
+      JSON.stringify(userData),
+      getCookieOptions(
+        7 * 24 * 60 * 60 * 1000,
+        false
+      )
+    );
+
+    // IMPORTANT:
+    // Normal Axios login must return JSON.
+    // Do NOT redirect here.
+    return res.status(200).json({
+      message: "Login successful",
+      user: userData,
     });
 
-    const frontendUrl =
-      process.env.NODE_ENV === "production"
-        ? process.env.FRONTEND_URL_PROD
-        : process.env.FRONTEND_URL_DEV || "http://localhost:3000";
-
-    res.redirect(`${frontendUrl}/profile`);
   } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error(
+      "Login error:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
   }
 };
+
+
+// =====================================================
+// REFRESH ACCESS TOKEN
+// =====================================================
 
 const refreshAccessToken = async (req, res) => {
   try {
-    const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken) return res.status(401).json({ message: "Refresh token required" });
+    const refreshToken =
+      req.cookies.refreshToken;
 
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const user = await User.findOne({ _id: decoded.id, refreshToken });
-    if (!user) return res.status(403).json({ message: "Invalid refresh token" });
+    if (!refreshToken) {
+      return res.status(401).json({
+        message: "Refresh token required",
+      });
+    }
 
-    const accessToken = jwt.sign({ id: user._id }, process.env.JWT_ACCESS_SECRET, { expiresIn: "48h" });
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET
+    );
 
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 48 * 60 * 1000,
+    const user = await User.findOne({
+      _id: decoded.id,
+      refreshToken,
     });
 
-    res.json({ message: "Access token refreshed" });
+    if (!user) {
+      return res.status(403).json({
+        message: "Invalid refresh token",
+      });
+    }
+
+    // Generate new access token - 7 days
+    const accessToken = jwt.sign(
+      {
+        id: user._id,
+      },
+      process.env.JWT_ACCESS_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+
+    // New access token cookie - 7 days
+    res.cookie(
+      "accessToken",
+      accessToken,
+      getCookieOptions(
+        7 * 24 * 60 * 60 * 1000,
+        true
+      )
+    );
+
+    return res.status(200).json({
+      message: "Access token refreshed",
+    });
+
   } catch (error) {
-    console.error("Token refresh error:", error);
-    if (error.name === "JsonWebTokenError")
-      return res.status(403).json({ message: "Invalid refresh token" });
-    if (error.name === "TokenExpiredError")
-      return res.status(403).json({ message: "Refresh token expired" });
-    res.status(500).json({ message: "Internal server error" });
+    console.error(
+      "Token refresh error:",
+      error
+    );
+
+    if (
+      error.name ===
+      "JsonWebTokenError"
+    ) {
+      return res.status(403).json({
+        message: "Invalid refresh token",
+      });
+    }
+
+    if (
+      error.name ===
+      "TokenExpiredError"
+    ) {
+      return res.status(403).json({
+        message: "Refresh token expired",
+      });
+    }
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
   }
 };
+
+
+// =====================================================
+// GOOGLE CALLBACK
+// =====================================================
 
 const googleCallback = async (req, res) => {
   try {
     const user = req.user;
+
+    const isProduction =
+      process.env.NODE_ENV === "production";
+
+    const frontendUrl = isProduction
+      ? process.env.FRONTEND_URL_PROD
+      : process.env.FRONTEND_URL_DEV ||
+        "http://localhost:3000";
+
+    // Google authentication failed
     if (!user) {
-      const errorMessage = req.authInfo?.message || "Authentication failed";
-      if (errorMessage.includes("Please login instead")) {
-        return res.redirect("http://localhost:3000/login?error=Account already exists. Please login instead.");
-      } else if (errorMessage.includes("Please register first")) {
-        return res.redirect("http://localhost:3000/register?error=No account found. Please register first.");
-      } else {
-        return res.redirect(`http://localhost:3000/login?error=${encodeURIComponent(errorMessage)}`);
+      const errorMessage =
+        req.authInfo?.message ||
+        "Authentication failed";
+
+      if (
+        errorMessage.includes(
+          "Please login instead"
+        )
+      ) {
+        return res.redirect(
+          `${frontendUrl}/login?error=${encodeURIComponent(
+            "Account already exists. Please login instead."
+          )}`
+        );
       }
+
+      if (
+        errorMessage.includes(
+          "Please register first"
+        )
+      ) {
+        return res.redirect(
+          `${frontendUrl}/register?error=${encodeURIComponent(
+            "No account found. Please register first."
+          )}`
+        );
+      }
+
+      return res.redirect(
+        `${frontendUrl}/login?error=${encodeURIComponent(
+          errorMessage
+        )}`
+      );
     }
 
-    const { accessToken, refreshToken } = generateTokens(user._id);
-    await User.findByIdAndUpdate(user._id, { refreshToken });
+    const {
+      accessToken,
+      refreshToken,
+    } = generateTokens(user._id);
 
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 48 * 60 * 1000,
-    });
+    await User.findByIdAndUpdate(
+      user._id,
+      {
+        refreshToken,
+      }
+    );
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    // Access token - 7 days
+    res.cookie(
+      "accessToken",
+      accessToken,
+      getCookieOptions(
+        7 * 24 * 60 * 60 * 1000,
+        true
+      )
+    );
+
+    // Refresh token - 7 days
+    res.cookie(
+      "refreshToken",
+      refreshToken,
+      getCookieOptions(
+        7 * 24 * 60 * 60 * 1000,
+        true
+      )
+    );
 
     const userData = {
       id: user._id,
@@ -175,34 +458,125 @@ const googleCallback = async (req, res) => {
       email: user.email,
     };
 
-    res.cookie("user", JSON.stringify(userData), {
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 48 * 60 * 1000,
-    });
+    // User cookie - 7 days
+    res.cookie(
+      "user",
+      JSON.stringify(userData),
+      getCookieOptions(
+        7 * 24 * 60 * 60 * 1000,
+        false
+      )
+    );
 
-    res.redirect("http://localhost:3000/profile");
+    // Google OAuth is a browser redirect,
+    // so redirect is correct here.
+    return res.redirect(
+      `${frontendUrl}/profile`
+    );
+
   } catch (error) {
-    res.redirect("http://localhost:3000/login?error=Server error during authentication.");
+    console.error(
+      "Google authentication error:",
+      error
+    );
+
+    const isProduction =
+      process.env.NODE_ENV === "production";
+
+    const frontendUrl = isProduction
+      ? process.env.FRONTEND_URL_PROD
+      : process.env.FRONTEND_URL_DEV ||
+        "http://localhost:3000";
+
+    return res.redirect(
+      `${frontendUrl}/login?error=${encodeURIComponent(
+        "Server error during authentication."
+      )}`
+    );
   }
 };
+
+
+// =====================================================
+// LOGOUT
+// =====================================================
 
 const logout = async (req, res) => {
   try {
-    const refreshToken = req.cookies.refreshToken;
+    const refreshToken =
+      req.cookies.refreshToken;
+
     if (refreshToken) {
-      const decoded = jwt.decode(refreshToken);
-      if (decoded?.id) await User.findByIdAndUpdate(decoded.id, { refreshToken: null });
+      const decoded =
+        jwt.decode(refreshToken);
+
+      if (decoded?.id) {
+        await User.findByIdAndUpdate(
+          decoded.id,
+          {
+            refreshToken: null,
+          }
+        );
+      }
     }
 
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
-    res.clearCookie("user");
+    const isProduction =
+      process.env.NODE_ENV === "production";
 
-    res.status(200).json({ message: "Logged out successfully" });
+    const clearCookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction
+        ? "none"
+        : "lax",
+    };
+
+    res.clearCookie(
+      "accessToken",
+      clearCookieOptions
+    );
+
+    res.clearCookie(
+      "refreshToken",
+      clearCookieOptions
+    );
+
+    res.clearCookie(
+      "user",
+      {
+        httpOnly: false,
+        secure: isProduction,
+        sameSite: isProduction
+          ? "none"
+          : "lax",
+      }
+    );
+
+    return res.status(200).json({
+      message: "Logged out successfully",
+    });
+
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    console.error(
+      "Logout error:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
   }
 };
 
-module.exports = { register, login, refreshAccessToken, googleCallback, logout };
+
+// =====================================================
+// EXPORTS
+// =====================================================
+
+module.exports = {
+  register,
+  login,
+  refreshAccessToken,
+  googleCallback,
+  logout,
+};

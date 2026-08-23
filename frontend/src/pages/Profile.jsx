@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axiosInstance from "../utils/axiosInstance";
 import Cookies from "js-cookie";
 
@@ -7,6 +7,7 @@ const Profile = ({ user, setUser }) => {
   const [changePassword, setChangePassword] = useState(false);
   const [editBirthYear, setEditBirthYear] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -15,93 +16,236 @@ const Profile = ({ user, setUser }) => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // --------------------------------------------------
+  // FETCH COMPLETE PROFILE FROM DATABASE
+  // --------------------------------------------------
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setProfileLoading(true);
+        setError("");
+
+        const response = await axiosInstance.get("/profile", {
+          withCredentials: true,
+        });
+
+        const profileUser = response.data;
+
+        console.log("Profile received from backend:", profileUser);
+        console.log("Birth year:", profileUser.birthYear);
+
+        // Update parent user state
+        setUser(profileUser);
+
+        // Update local states
+        setName(profileUser.name || "");
+        setBirthYear(profileUser.birthYear ?? "");
+
+        // Keep cookie synchronized
+        Cookies.set("user", JSON.stringify(profileUser), {
+          expires: 7,
+          secure: window.location.protocol === "https:",
+          sameSite: "strict",
+        });
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+
+        setError(
+          error.response?.data?.message ||
+            "Failed to load profile"
+        );
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [setUser]);
+
+  // Keep local states synchronized with user
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setBirthYear(user.birthYear ?? "");
+    }
+  }, [user]);
+
+  // --------------------------------------------------
+  // UPDATE NAME
+  // --------------------------------------------------
   const handleUpdateName = async (e) => {
     e.preventDefault();
+
     if (!name.trim()) {
       setError("Name cannot be empty");
       return;
     }
+
     setLoading(true);
     setError("");
+
     try {
-      const response = await axiosInstance.put("/profile", { name });
-      setUser(response.data.user);
-      Cookies.set("user", JSON.stringify(response.data.user), {
-        expires: new Date(Date.now() + 15 * 60 * 1000),
-        secure: process.env.NODE_ENV === "production",
+      const response = await axiosInstance.put(
+        "/profile",
+        { name },
+        { withCredentials: true }
+      );
+
+      const updatedUser = response.data.user;
+
+      setUser(updatedUser);
+      setName(updatedUser.name || "");
+      setBirthYear(updatedUser.birthYear ?? "");
+
+      Cookies.set("user", JSON.stringify(updatedUser), {
+        expires: 7,
+        secure: window.location.protocol === "https:",
         sameSite: "strict",
       });
+
       setEditName(false);
       setMessage("Name updated successfully");
+
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
-      setError(error.response?.data?.message || "Failed to update name");
+      setError(
+        error.response?.data?.message ||
+          "Failed to update name"
+      );
     }
+
     setLoading(false);
   };
 
+  // --------------------------------------------------
+  // UPDATE BIRTH YEAR
+  // --------------------------------------------------
   const handleUpdateBirthYear = async (e) => {
     e.preventDefault();
-    if (birthYear === "" || birthYear === null || birthYear === undefined) {
+
+    if (
+      birthYear === "" ||
+      birthYear === null ||
+      birthYear === undefined
+    ) {
       setError("Birth year is required");
       return;
     }
 
     const by = Number(birthYear);
     const currentYear = new Date().getFullYear();
+
     if (!Number.isFinite(by) || !Number.isInteger(by)) {
       setError("Birth year must be an integer");
       return;
     }
+
     if (by < 1900 || by > currentYear) {
-      setError(`Birth year must be between 1900 and ${currentYear}`);
+      setError(
+        `Birth year must be between 1900 and ${currentYear}`
+      );
       return;
     }
 
     setLoading(true);
     setError("");
+
     try {
-      // update via same endpoint as name OR a dedicated endpoint
-      const response = await axiosInstance.put("/profile", { birthYear: by });
-      setUser(response.data.user);
-      Cookies.set("user", JSON.stringify(response.data.user), {
-        expires: new Date(Date.now() + 15 * 60 * 1000),
-        secure: process.env.NODE_ENV === "production",
+      const response = await axiosInstance.put(
+        "/profile",
+        { birthYear: by },
+        { withCredentials: true }
+      );
+
+      const updatedUser = response.data.user;
+
+      console.log("Updated profile:", updatedUser);
+      console.log("Updated birth year:", updatedUser.birthYear);
+
+      setUser(updatedUser);
+
+      setName(updatedUser.name || "");
+      setBirthYear(updatedUser.birthYear ?? "");
+
+      Cookies.set("user", JSON.stringify(updatedUser), {
+        expires: 7,
+        secure: window.location.protocol === "https:",
         sameSite: "strict",
       });
+
       setEditBirthYear(false);
       setMessage("Birth year updated successfully");
+
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
-      setError(error.response?.data?.message || "Failed to update birth year");
+      console.error("Birth year update error:", error);
+
+      setError(
+        error.response?.data?.message ||
+          "Failed to update birth year"
+      );
     }
+
     setLoading(false);
   };
 
+  // --------------------------------------------------
+  // UPDATE PASSWORD
+  // --------------------------------------------------
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
+
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
+
     if (newPassword.length < 6) {
       setError("Password must be at least 6 characters");
       return;
     }
+
     setLoading(true);
     setError("");
+
     try {
-      await axiosInstance.put("/profile/password", { newPassword });
+      await axiosInstance.put(
+        "/profile/password",
+        { newPassword },
+        { withCredentials: true }
+      );
+
       setChangePassword(false);
       setNewPassword("");
       setConfirmPassword("");
+
       setMessage("Password updated successfully");
+
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
-      setError(error.response?.data?.message || "Failed to update password");
+      setError(
+        error.response?.data?.message ||
+          "Failed to update password"
+      );
     }
+
     setLoading(false);
   };
+
+  // --------------------------------------------------
+  // LOADING
+  // --------------------------------------------------
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="bg-white rounded-lg shadow-md p-6 border-2 border-black">
+            Loading profile...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 py-8">
@@ -111,6 +255,7 @@ const Profile = ({ user, setUser }) => {
             {message}
           </div>
         )}
+
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6 text-center font-medium">
             {error}
@@ -119,7 +264,9 @@ const Profile = ({ user, setUser }) => {
 
         <div className="bg-white rounded-lg shadow-md p-6 border-1 border-2 border-black">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-serif font-semibold">Profile</h1>
+            <h1 className="text-2xl font-serif font-semibold">
+              Profile
+            </h1>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -128,10 +275,20 @@ const Profile = ({ user, setUser }) => {
                 <div className="w-32 h-32 bg-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl font-bold text-white">
                   {user?.name?.charAt(0).toUpperCase()}
                 </div>
-                <h2 className="text-xl font-semibold">{user?.name}</h2>
-                <p className="text-gray-600">@{user?.username}</p>
-                <p className="text-gray-600">{user?.email}</p>
-                {!user?.password && (
+
+                <h2 className="text-xl font-semibold">
+                  {user?.name}
+                </h2>
+
+                <p className="text-gray-600">
+                  @{user?.username}
+                </p>
+
+                <p className="text-gray-600">
+                  {user?.email}
+                </p>
+
+                {user?.isOAuthUser && (
                   <p className="text-sm text-blue-600 mt-2">
                     Signed in with Google
                   </p>
@@ -146,13 +303,18 @@ const Profile = ({ user, setUser }) => {
                     Account Settings
                   </h3>
 
-                  <div className="bg-gray-50 p-4 rounded-lg  border-2 border-black">
+                  {/* NAME */}
+                  <div className="bg-gray-50 p-4 rounded-lg border-2 border-black">
                     {!editName ? (
                       <div className="flex justify-between items-center ">
                         <div>
                           <p className="font-medium ">Name</p>
-                          <p className="text-gray-600">{user?.name}</p>
+
+                          <p className="text-gray-600">
+                            {user?.name}
+                          </p>
                         </div>
+
                         <button
                           onClick={() => setEditName(true)}
                           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
@@ -161,27 +323,37 @@ const Profile = ({ user, setUser }) => {
                         </button>
                       </div>
                     ) : (
-                      <form onSubmit={handleUpdateName} className="space-y-4">
+                      <form
+                        onSubmit={handleUpdateName}
+                        className="space-y-4"
+                      >
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Name
                           </label>
+
                           <input
                             type="text"
                             value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            onChange={(e) =>
+                              setName(e.target.value)
+                            }
                             className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
                             required
                           />
                         </div>
+
                         <div className="flex gap-4">
                           <button
                             type="submit"
                             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
                             disabled={loading}
                           >
-                            {loading ? "Updating..." : "Save Name"}
+                            {loading
+                              ? "Updating..."
+                              : "Save Name"}
                           </button>
+
                           <button
                             type="button"
                             onClick={() => {
@@ -197,53 +369,82 @@ const Profile = ({ user, setUser }) => {
                     )}
                   </div>
 
+                  {/* BIRTH YEAR */}
                   <div className="bg-gray-50 p-4 rounded-lg mt-4 border-1">
                     {!editBirthYear ? (
                       <div className="flex justify-between items-center ">
                         <div>
-                          <p className="font-medium ">Birth Year</p>
+                          <p className="font-medium ">
+                            Birth Year
+                          </p>
+
                           <p className="text-gray-600">
-                            {user?.birthYear !== undefined && user?.birthYear !== null && user?.birthYear !== ""
-                              ? `${user.birthYear} (age: ${user.age ?? '—'})`
+                            {user?.birthYear !== undefined &&
+                            user?.birthYear !== null &&
+                            user?.birthYear !== ""
+                              ? `${user.birthYear} (age: ${
+                                  user.age ??
+                                  new Date().getFullYear() -
+                                    Number(user.birthYear)
+                                })`
                               : "Not set"}
                           </p>
                         </div>
+
                         <button
-                          onClick={() => setEditBirthYear(true)}
+                          onClick={() =>
+                            setEditBirthYear(true)
+                          }
                           className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
                         >
-                          {user?.birthYear ? "Change Birth Year" : "Add Birth Year"}
+                          {user?.birthYear
+                            ? "Change Birth Year"
+                            : "Add Birth Year"}
                         </button>
                       </div>
                     ) : (
-                      <form onSubmit={handleUpdateBirthYear} className="space-y-4">
+                      <form
+                        onSubmit={handleUpdateBirthYear}
+                        className="space-y-4"
+                      >
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Birth Year
                           </label>
+
                           <input
                             type="number"
                             value={birthYear}
-                            onChange={(e) => setBirthYear(e.target.value)}
+                            onChange={(e) =>
+                              setBirthYear(e.target.value)
+                            }
                             className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500"
                             min={1900}
                             max={new Date().getFullYear()}
                             required
                           />
                         </div>
+
                         <div className="flex gap-4">
                           <button
                             type="submit"
                             className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
                             disabled={loading}
                           >
-                            {loading ? "Updating..." : user?.birthYear ? "Update Birth Year" : "Save Birth Year"}
+                            {loading
+                              ? "Updating..."
+                              : user?.birthYear
+                              ? "Update Birth Year"
+                              : "Save Birth Year"}
                           </button>
+
                           <button
                             type="button"
                             onClick={() => {
                               setEditBirthYear(false);
-                              setBirthYear(user?.birthYear ?? "");
+                              setBirthYear(
+                                user?.birthYear ?? ""
+                              );
                             }}
                             className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition"
                           >
@@ -254,57 +455,80 @@ const Profile = ({ user, setUser }) => {
                     )}
                   </div>
 
+                  {/* PASSWORD */}
                   <div className="bg-gray-50 p-4 rounded-lg mt-4 border-1">
                     {!changePassword ? (
                       <div className="flex justify-between items-center">
                         <div>
-                          <p className="font-medium">Password</p>
+                          <p className="font-medium">
+                            Password
+                          </p>
+
                           <p className="text-gray-600">
-                            {user?.password
-                              ? "••••••••"
-                              : "Set a password to enable email login"}
+                            {user?.isOAuthUser
+                              ? "Set a password to enable email login"
+                              : "••••••••"}
                           </p>
                         </div>
+
                         <button
-                          onClick={() => setChangePassword(true)}
+                          onClick={() =>
+                            setChangePassword(true)
+                          }
                           className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
                         >
-                          {user?.password ? "Change Password" : "Set Password"}
+                          {user?.isOAuthUser
+                            ? "Set Password"
+                            : "Change Password"}
                         </button>
                       </div>
                     ) : (
-                      <form onSubmit={handleUpdatePassword} className="space-y-4">
+                      <form
+                        onSubmit={handleUpdatePassword}
+                        className="space-y-4"
+                      >
                         <div>
                           <p className="text-sm text-gray-600 mb-4">
-                            {user?.password
-                              ? "Change your password"
-                              : "Set a password to enable email/password login"}
+                            {user?.isOAuthUser
+                              ? "Set a password to enable email/password login"
+                              : "Change your password"}
                           </p>
+
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             New Password
                           </label>
+
                           <input
                             type="password"
                             value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
+                            onChange={(e) =>
+                              setNewPassword(e.target.value)
+                            }
                             className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500"
                             placeholder="Enter new password"
                             required
                           />
                         </div>
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Confirm New Password
                           </label>
+
                           <input
                             type="password"
                             value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            onChange={(e) =>
+                              setConfirmPassword(
+                                e.target.value
+                              )
+                            }
                             className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500"
                             placeholder="Confirm new password"
                             required
                           />
                         </div>
+
                         <div className="flex gap-4">
                           <button
                             type="submit"
@@ -313,10 +537,11 @@ const Profile = ({ user, setUser }) => {
                           >
                             {loading
                               ? "Updating..."
-                              : user?.password
-                              ? "Update Password"
-                              : "Set Password"}
+                              : user?.isOAuthUser
+                              ? "Set Password"
+                              : "Update Password"}
                           </button>
+
                           <button
                             type="button"
                             onClick={() => {
@@ -337,7 +562,7 @@ const Profile = ({ user, setUser }) => {
             </div>
           </div>
         </div>
-      </div> 
+      </div>
     </div>
   );
 };

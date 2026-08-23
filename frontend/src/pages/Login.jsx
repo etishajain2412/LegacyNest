@@ -8,6 +8,7 @@ const Login = ({ setUser }) => {
     identifier: "",
     password: "",
   });
+
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -27,35 +28,47 @@ const Login = ({ setUser }) => {
   }, [location, navigate]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setLoading(true);
     setErrorMessage("");
+
     try {
-      const response = await axiosInstance.post("/auth/login", formData);
-      const { accessToken, user } = response.data;
+      const response = await axiosInstance.post(
+        "/auth/login",
+        formData
+      );
 
-      Cookies.set("accessToken", accessToken, {
-        expires: new Date(Date.now() + 48 * 60 * 1000),
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-      });
+      const { user } = response.data;
 
+      // Store user information for frontend state
       Cookies.set("user", JSON.stringify(user), {
-        expires: new Date(Date.now() + 48 * 60 * 1000),
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        expires: 2,
+        secure: window.location.protocol === "https:",
+        sameSite: "lax",
       });
 
       setUser(user);
+
+      // Backend has already set the httpOnly
+      // accessToken and refreshToken cookies
       navigate("/profile");
     } catch (error) {
-      setErrorMessage(error.response?.data?.message || "Login failed");
+      console.error("Login error:", error);
+
+      setErrorMessage(
+        error.response?.data?.message || "Login failed"
+      );
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleGoogleLogin = () => {
@@ -71,7 +84,10 @@ const Login = ({ setUser }) => {
       }}
     >
       <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md border-2 border-black">
-        <h2 className="text-2xl font-bold text-center mb-2 font-serif">Login</h2>
+        <h2 className="text-2xl font-bold text-center mb-2 font-serif">
+          Login
+        </h2>
+
         <p className="text-sm text-gray-600 text-center mb-4">
           Enter your credentials to access your account
         </p>
@@ -82,26 +98,30 @@ const Login = ({ setUser }) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3 ">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {/* Email / Username */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 ">
+            <label className="block text-sm font-medium text-gray-700">
               Email or Username
             </label>
+
             <input
               type="text"
               name="identifier"
               placeholder="Enter your email or username"
               value={formData.identifier}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500 "
+              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500"
               required
             />
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Password
             </label>
+
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -112,16 +132,20 @@ const Login = ({ setUser }) => {
                 className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500"
                 required
               />
+
               <button
                 type="button"
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 text-sm"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() =>
+                  setShowPassword(!showPassword)
+                }
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
           </div>
 
+          {/* Login Button */}
           <button
             type="submit"
             className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
@@ -131,12 +155,18 @@ const Login = ({ setUser }) => {
           </button>
         </form>
 
+        {/* OR */}
         <div className="flex items-center my-4">
           <div className="flex-grow h-px bg-gray-300"></div>
-          <span className="px-2 text-gray-500 text-sm">OR</span>
+
+          <span className="px-2 text-gray-500 text-sm">
+            OR
+          </span>
+
           <div className="flex-grow h-px bg-gray-300"></div>
         </div>
 
+        {/* Google Login */}
         <button
           onClick={handleGoogleLogin}
           className="w-full flex items-center justify-center gap-2 border py-2 rounded hover:bg-gray-100 transition"
@@ -146,9 +176,11 @@ const Login = ({ setUser }) => {
             alt="Google"
             className="w-5 h-5"
           />
+
           <span>Sign in with Google</span>
         </button>
 
+        {/* Register */}
         <p className="text-sm text-center mt-4">
           Don't have an account?{" "}
           <Link
@@ -163,4 +195,4 @@ const Login = ({ setUser }) => {
   );
 };
 
-export default Login;
+export default Login;

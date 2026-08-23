@@ -109,26 +109,41 @@ const updatePassword = async (req, res) => {
     const { newPassword } = req.body;
 
     if (!newPassword) {
-      return res.status(400).json({ message: 'New password is required' });
+      return res.status(400).json({
+        message: "New password is required",
+      });
     }
+
     if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+      return res.status(400).json({
+        message: "Password must be at least 6 characters",
+      });
     }
 
     const user = await User.findById(req.user.id);
+
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    // DO NOT hash here.
+    // User model's pre-save hook handles hashing.
+    user.password = newPassword;
 
     await user.save();
 
-    res.json({ message: 'Password updated successfully' });
+    return res.status(200).json({
+      message: "Password updated successfully",
+    });
+
   } catch (error) {
-    console.error('updatePassword error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("updatePassword error:", error);
+
+    return res.status(500).json({
+      message: "Server error",
+    });
   }
 };
 
